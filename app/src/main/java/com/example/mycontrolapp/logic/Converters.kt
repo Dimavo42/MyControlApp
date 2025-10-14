@@ -1,0 +1,42 @@
+package com.example.mycontrolapp.logic
+import androidx.room.TypeConverter
+import com.example.mycontrolapp.logic.sharedEnums.Profession
+import java.time.LocalDate
+import java.util.*
+
+
+class Converters {
+
+    /* ---------- List<String> <-> CSV ---------- */
+    @TypeConverter
+    fun fromCsv(csv: String?): List<String> =
+        csv?.takeIf { it.isNotBlank() }?.split("|") ?: emptyList()
+
+    @TypeConverter
+    fun toCsv(list: List<String>?): String =
+        list?.joinToString("|") ?: ""
+
+    /* ---------- java.util.Date <-> Long (millis) ---------- */
+    @TypeConverter
+    fun fromDate(d: Date?): Long? = d?.time
+
+    @TypeConverter
+    fun toDate(ms: Long?): Date? = ms?.let { Date(it) }
+
+    /* ---------- java.time.LocalDate <-> Int (epochDay) ---------- */
+    @TypeConverter
+    fun fromLocalDate(d: LocalDate?): Int? = d?.toEpochDay()?.toInt()
+
+    @TypeConverter
+    fun toLocalDate(epoch: Int?): LocalDate? =
+        epoch?.toLong()?.let(LocalDate::ofEpochDay)
+
+    /* ---------- Profession <-> String ---------- */
+    @TypeConverter
+    fun fromProfession(p: Profession?): String? = p?.name
+
+    @TypeConverter
+    fun toProfession(s: String?): Profession? =
+        s?.let { runCatching { Profession.valueOf(it) }.getOrElse { Profession.Unknown } }
+
+}

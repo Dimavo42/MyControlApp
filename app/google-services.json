@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "601502781799",
+    "project_id": "dima-idf-project",
+    "storage_bucket": "dima-idf-project.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:601502781799:android:4aad8234cb6966fcb75fc2",
+        "android_client_info": {
+          "package_name": "com.example.mycontrolapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAp5iPIjR5-5qgxV8-ZX8IKkJimITidWY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
