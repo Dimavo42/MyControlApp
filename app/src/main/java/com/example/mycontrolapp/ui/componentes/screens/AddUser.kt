@@ -237,9 +237,11 @@ fun AddUser(
         item { Text(text = stringResource(R.string.label_professions_multi), style = MaterialTheme.typography.labelLarge) }
 
         item {
+            // ⬇⬇⬇ Changed: build display from localized labels
             val display = selectedProfessions
-                .sortedBy { it.label }
-                .joinToString(", ") { it.label }
+                .map { stringResource(it.labelRes) }
+                .sorted()
+                .joinToString(", ")
                 .ifEmpty { stringResource(R.string.none_label) }
 
             val canOpenMenu = fieldsEnabled
@@ -281,7 +283,8 @@ fun AddUser(
                                         onCheckedChange = { _ -> toggleProfession(prof) },
                                         enabled = fieldsEnabled
                                     )
-                                    Text(prof.label)
+                                    // ⬇⬇⬇ Changed: localized label
+                                    Text(stringResource(prof.labelRes))
                                 }
                             },
                             onClick = { if (fieldsEnabled) toggleProfession(prof) },

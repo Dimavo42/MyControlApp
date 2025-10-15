@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">שליטה מלאה</string>
+    <string name="app_name">מערכת לוז</string>
     <string-array name="calendar_weekdays">
         <item>א</item><item>ב</item><item>ג</item>
         <item>ד</item><item>ה</item><item>ו</item><item>שבת</item>
@@ -123,4 +123,16 @@
         <item>נובמבר</item>
         <item>דצמבר</item>
     </string-array>
+
+    <string name="prof_yanir">יניר</string>
+    <string name="prof_kitchen">מטבח</string>
+    <string name="prof_soldier">חייל</string>
+    <string name="prof_officer">קצין</string>
+    <string name="prof_negev"> נגב</string>
+    <string name="prof_mag">מאגיסט</string>
+    <string name="prof_medic">חובש</string>
+    <string name="prof_shooter">קלע</string>
+    <string name="prof_grenade_launcher">מטוליסט</string>
+    <string name="prof_driver">נהג</string>
+    <string name="prof_unknown">לא ידוע</string>
 </resources>

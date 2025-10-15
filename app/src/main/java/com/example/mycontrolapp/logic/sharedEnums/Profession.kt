@@ -1,17 +1,19 @@
 package com.example.mycontrolapp.logic.sharedEnums
 
-enum class Profession(val label: String) {
-    Yanir("Yanir"),
-    Kitchen("Kitchen"),
-    Solider("Solider"),
-    Officer("Officer"),
-    Negev("Negev"),
-    Mag("Mag"),
-    Medic("Medic"),
-    Shooter("Shooter"),
-    GunGrenadeLauncher("Grenade Launcher"),
-    Driver("Driver"),
-    Unknown("Unknown");
+import androidx.annotation.StringRes
+import com.example.mycontrolapp.R
 
-    override fun toString(): String = label
+enum class Profession(@StringRes val labelRes: Int) {
+    Yanir(R.string.prof_yanir),
+    Kitchen(R.string.prof_kitchen),
+    // Keep the enum name "Solider" if existing data depends on it
+    Solider(R.string.prof_soldier),
+    Officer(R.string.prof_officer),
+    Negev(R.string.prof_negev),
+    Mag(R.string.prof_mag),
+    Medic(R.string.prof_medic),
+    Shooter(R.string.prof_shooter),
+    GunGrenadeLauncher(R.string.prof_grenade_launcher),
+    Driver(R.string.prof_driver),
+    Unknown(R.string.prof_unknown);
 }

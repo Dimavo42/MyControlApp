@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">MyControlApp</string>
+    <string name="app_name">Timetable system</string>
     <string-array name="calendar_weekdays">
         <item>Sun</item><item>Mon</item><item>Tue</item>
         <item>Wed</item><item>Thu</item><item>Fri</item><item>Sat</item>
@@ -125,4 +125,16 @@
         <item>November</item>
         <item>December</item>
     </string-array>
+
+    <string name="prof_yanir">Yanir</string>
+    <string name="prof_kitchen">Kitchen</string>
+    <string name="prof_soldier">Soldier</string>
+    <string name="prof_officer">Officer</string>
+    <string name="prof_negev">Negev</string>
+    <string name="prof_mag">MAG</string>
+    <string name="prof_medic">Medic</string>
+    <string name="prof_shooter">Shooter</string>
+    <string name="prof_grenade_launcher">Grenade Launcher</string>
+    <string name="prof_driver">Driver</string>
+    <string name="prof_unknown">Unknown</string>
 </resources>

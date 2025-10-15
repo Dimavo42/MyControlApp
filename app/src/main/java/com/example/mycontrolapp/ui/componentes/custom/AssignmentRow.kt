@@ -47,7 +47,7 @@ fun AssignmentRow(
             .semantics { contentDescription = "resourceId:rowQuickAssign_${profession.name}" },
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("${profession.label} →", modifier = Modifier.weight(1f))
+        Text("${stringResource(profession.labelRes)} →", modifier = Modifier.weight(1f))
 
         ExposedDropdownMenuBox(
             expanded = expanded,
@@ -58,7 +58,7 @@ fun AssignmentRow(
                 readOnly = true,
                 value = if (hasOptions) (selected?.name ?: "") else stringResource(R.string.no_available_users),
                 onValueChange = {},
-                label = { Text(stringResource(R.string.label_select_for_role, profession.label)) },
+                label = { Text(stringResource(R.string.label_select_for_role, stringResource(profession.labelRes))) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 enabled = hasOptions,
                 modifier = Modifier

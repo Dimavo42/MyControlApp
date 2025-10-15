@@ -37,7 +37,7 @@ fun AssignmentRow(
             modifier = Modifier.weight(2f)
         ) {
             OutlinedTextField(
-                value = selected.label,
+                value = stringResource(selected.labelRes),
                 onValueChange = {},
                 readOnly = true,
                 label = { Text(stringResource(R.string.label_profession)) },
@@ -53,7 +53,7 @@ fun AssignmentRow(
             ) {
                 options.forEach { prof ->
                     DropdownMenuItem(
-                        text = { Text(prof.label) },
+                        text = { Text(stringResource(prof.labelRes)) },
                         onClick = {
                             onSelected(prof)
                             expanded = false

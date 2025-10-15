@@ -305,7 +305,8 @@ fun AssignmentScreen(
                 ) {
                     ListItem(
                         headlineContent = { Text(user?.name ?: stringResource(R.string.unknown_user)) },
-                        supportingContent = { Text(asg.role.label) },
+                        // ⬇ Localized profession label
+                        supportingContent = { Text(stringResource(asg.role.labelRes)) },
                         trailingContent = {
                             TextButton(
                                 onClick = { viewModel.unassignUser(activityId, asg.userId) }
