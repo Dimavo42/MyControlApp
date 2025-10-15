@@ -32,11 +32,11 @@ object AppModule {
             .build()
 
 
-    @Provides @Singleton
-    fun provideListManager(hybrid: ListManagerHybrid): ListManager = hybrid
-
 //    @Provides @Singleton
-//    fun provideListManager(db: AppDb): ListManager = ListManagerRoom(db)
+//    fun provideListManager(hybrid: ListManagerHybrid): ListManager = hybrid
+
+    @Provides @Singleton
+    fun provideListManager(db: AppDb): ListManager = ListManagerRoom(db)
 
 }
 

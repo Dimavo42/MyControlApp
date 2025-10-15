@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
@@ -28,8 +29,8 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import com.example.mycontrolapp.R
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AssignmentScreen(
     navController: NavController,
@@ -43,7 +44,7 @@ fun AssignmentScreen(
     if (activity == null) {
         Column(Modifier.padding(16.dp)) {
             Text(
-                "Activity not found.",
+                stringResource(R.string.assignment_not_found),
                 modifier = Modifier
                     .testTag("txtActivityNotFound")
                     .semantics { contentDescription = "resourceId:txtActivityNotFound" }
@@ -54,7 +55,7 @@ fun AssignmentScreen(
                 modifier = Modifier
                     .testTag("btnBackNotFound")
                     .semantics { contentDescription = "resourceId:btnBackNotFound" }
-            ) { Text("Back") }
+            ) { Text(stringResource(R.string.common_back)) }
         }
         return
     }
@@ -134,8 +135,6 @@ fun AssignmentScreen(
     }
 
     // --- Options per role ---
-    // TODO: refine filtering by role using your user↔profession mapping (e.g. from DAO/ViewModel).
-    // For now, offer all *unassigned* users; business rule: anyone can be chosen.
     @Composable
     fun optionsFor(profession: Profession): List<User> {
         return unassignedUsers
@@ -157,7 +156,7 @@ fun AssignmentScreen(
     ) {
         item {
             Text(
-                "Assignment",
+                stringResource(R.string.assignment_title),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier
                     .testTag("lblAssignmentTitle")
@@ -174,7 +173,10 @@ fun AssignmentScreen(
                     .semantics { contentDescription = "resourceId:rowEditSwitch" },
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(if (useEdit) "Editing enabled" else "Editing disabled")
+                Text(
+                    if (useEdit) stringResource(R.string.editing_enabled)
+                    else stringResource(R.string.editing_disabled)
+                )
                 Switch(
                     checked = useEdit,
                     onCheckedChange = { useEdit = it },
@@ -190,7 +192,7 @@ fun AssignmentScreen(
             TextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Activity Name") },
+                label = { Text(stringResource(R.string.label_activity_name)) },
                 enabled = useEdit,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 modifier = Modifier
@@ -222,7 +224,7 @@ fun AssignmentScreen(
         // ------------------ Needed assignments ------------------
         item {
             Text(
-                "Needed assignments",
+                stringResource(R.string.title_needed_assignments),
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier
                     .testTag("lblNeededAssignments")
@@ -233,7 +235,7 @@ fun AssignmentScreen(
         if (neededSeats.isEmpty()) {
             item {
                 Text(
-                    "All required roles are fully assigned.",
+                    stringResource(R.string.msg_all_roles_full),
                     modifier = Modifier
                         .testTag("txtNoNeeds")
                         .semantics { contentDescription = "resourceId:txtNoNeeds" }
@@ -272,7 +274,7 @@ fun AssignmentScreen(
         // ------------------ Existing assignments ------------------
         item {
             Text(
-                "Existing assignments",
+                stringResource(R.string.title_existing_assignments),
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier
                     .testTag("lblExistingAssignments")
@@ -283,7 +285,7 @@ fun AssignmentScreen(
         if (assignmentsForActivity.isEmpty()) {
             item {
                 Text(
-                    "No assignments yet.",
+                    stringResource(R.string.msg_no_assignments_yet),
                     modifier = Modifier
                         .testTag("txtNoAssignments")
                         .semantics { contentDescription = "resourceId:txtNoAssignments" }
@@ -302,12 +304,12 @@ fun AssignmentScreen(
                         .semantics { contentDescription = "resourceId:cardAssignment_${asg.id}" }
                 ) {
                     ListItem(
-                        headlineContent = { Text(user?.name ?: "(Unknown user)") },
+                        headlineContent = { Text(user?.name ?: stringResource(R.string.unknown_user)) },
                         supportingContent = { Text(asg.role.label) },
                         trailingContent = {
                             TextButton(
                                 onClick = { viewModel.unassignUser(activityId, asg.userId) }
-                            ) { Text("Unassign") }
+                            ) { Text(stringResource(R.string.action_unassign)) }
                         }
                     )
                 }
@@ -333,7 +335,7 @@ fun AssignmentScreen(
                         modifier = Modifier
                             .testTag("btnSaveActivity")
                             .semantics { contentDescription = "resourceId:btnSaveActivity" }
-                    ) { Text("Save Activity") }
+                    ) { Text(stringResource(R.string.action_save_activity)) }
                 }
             }
         }
@@ -346,14 +348,14 @@ fun AssignmentScreen(
                     modifier = Modifier
                         .testTag("btnClearSelections")
                         .semantics { contentDescription = "resourceId:btnClearSelections" }
-                ) { Text("Clear") }
+                ) { Text(stringResource(R.string.common_clear)) }
 
                 OutlinedButton(
                     onClick = { navController.popBackStack() },
                     modifier = Modifier
                         .testTag("btnBack")
                         .semantics { contentDescription = "resourceId:btnBack" }
-                ) { Text("Back") }
+                ) { Text(stringResource(R.string.common_back)) }
             }
         }
     }

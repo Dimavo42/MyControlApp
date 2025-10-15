@@ -6,15 +6,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.mycontrolapp.logic.Activity
-import com.example.mycontrolapp.logic.ActivityRoleRequirement
 import com.example.mycontrolapp.logic.User
 import com.example.mycontrolapp.logic.sharedEnums.Profession
 import com.example.mycontrolapp.ui.componentes.ActivityViewModel
@@ -24,6 +22,7 @@ import com.example.mycontrolapp.ui.componentes.custom.ComputedTimeWindow
 import com.example.mycontrolapp.ui.componentes.custom.TimeWindowContainer
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import com.example.mycontrolapp.R
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,14 +95,14 @@ fun AddActivity(
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         item {
-            Text("Create activity", style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(R.string.create_activity_title), style = MaterialTheme.typography.titleLarge)
         }
 
         item {
             OutlinedTextField(
                 value = activityName,
                 onValueChange = { activityName = it },
-                label = { Text("Activity Name") },
+                label = { Text(stringResource(R.string.label_activity_name)) },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Text
                 ),
@@ -149,7 +148,7 @@ fun AddActivity(
         if (!assignCountOk) {
             item {
                 Text(
-                    "You selected ${selectedUsers.size} users but candidates limit is $candidates.",
+                    stringResource(R.string.error_selected_users_exceeds, selectedUsers.size, candidates),
                     color = MaterialTheme.colorScheme.error
                 )
             }
@@ -175,10 +174,11 @@ fun AddActivity(
                             activity = newActivity,
                             roles = roles
                         )
-
-                        navController.navigateUp()
+                        navController.navigate("home") {
+                            popUpTo("home") { inclusive = true }
+                        }
                     }
-                ) { Text("Accept") }
+                ) { Text(stringResource(R.string.action_accept)) }
 
                 OutlinedButton(
                     onClick = {
@@ -190,7 +190,7 @@ fun AddActivity(
                         selectedUsers = emptySet()
                         roles = emptyList()
                     }
-                ) { Text("Reset") }
+                ) { Text(stringResource(R.string.action_reset)) }
             }
         }
     }

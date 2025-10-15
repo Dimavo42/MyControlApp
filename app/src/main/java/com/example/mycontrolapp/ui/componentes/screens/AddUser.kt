@@ -19,6 +19,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -28,6 +29,7 @@ import com.example.mycontrolapp.ui.componentes.ActivityViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
+import com.example.mycontrolapp.R
 
 private enum class UserEditorMode { Add, Edit }
 
@@ -130,7 +132,8 @@ fun AddUser(
     ) {
         item {
             Text(
-                if (mode == UserEditorMode.Add) "Add new user to the app" else "Edit existing user",
+                if (mode == UserEditorMode.Add) stringResource(R.string.add_user_title_add)
+                else stringResource(R.string.add_user_title_edit),
                 style = MaterialTheme.typography.titleLarge
             )
         }
@@ -143,7 +146,12 @@ fun AddUser(
                     Tab(
                         selected = i == idx,
                         onClick = { mode = m },
-                        text = { Text(if (m == UserEditorMode.Add) "Add" else "Edit") }
+                        text = {
+                            Text(
+                                if (m == UserEditorMode.Add) stringResource(R.string.tab_add)
+                                else stringResource(R.string.tab_edit)
+                            )
+                        }
                     )
                 }
             }
@@ -160,7 +168,7 @@ fun AddUser(
                         value = selectedUser?.name ?: "",
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Select user") },
+                        label = { Text(stringResource(R.string.label_select_user)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = userMenuExpanded) },
                         modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
@@ -186,7 +194,7 @@ fun AddUser(
             OutlinedTextField(
                 value = firstName,
                 onValueChange = { firstName = it },
-                label = { Text("First Name") },
+                label = { Text(stringResource(R.string.label_first_name)) },
                 enabled = fieldsEnabled,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -196,7 +204,7 @@ fun AddUser(
             OutlinedTextField(
                 value = lastName,
                 onValueChange = { lastName = it },
-                label = { Text("Last Name") },
+                label = { Text(stringResource(R.string.label_last_name)) },
                 enabled = fieldsEnabled,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -206,7 +214,7 @@ fun AddUser(
             OutlinedTextField(
                 value = preferences,
                 onValueChange = { preferences = it },
-                label = { Text("Skills / Preferences (comma separated)") },
+                label = { Text(stringResource(R.string.label_skills_prefs)) },
                 enabled = fieldsEnabled,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -222,17 +230,17 @@ fun AddUser(
                     onCheckedChange = { checked -> toggleAnyRole(checked) },
                     enabled = fieldsEnabled
                 )
-                Text("Can fill any role")
+                Text(stringResource(R.string.label_can_fill_any_role))
             }
         }
 
-        item { Text(text = "Professions (multi-select)", style = MaterialTheme.typography.labelLarge) }
+        item { Text(text = stringResource(R.string.label_professions_multi), style = MaterialTheme.typography.labelLarge) }
 
         item {
             val display = selectedProfessions
                 .sortedBy { it.label }
                 .joinToString(", ") { it.label }
-                .ifEmpty { "None" }
+                .ifEmpty { stringResource(R.string.none_label) }
 
             val canOpenMenu = fieldsEnabled
             ExposedDropdownMenuBox(
@@ -244,7 +252,7 @@ fun AddUser(
                     onValueChange = {},
                     readOnly = true,
                     enabled = fieldsEnabled,
-                    label = { Text("Professions") },
+                    label = { Text(stringResource(R.string.label_professions)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = professionsMenuExpanded) },
                     modifier = Modifier.menuAnchor().fillMaxWidth()
                 )
@@ -254,11 +262,11 @@ fun AddUser(
                 ) {
                     // Quick actions
                     DropdownMenuItem(
-                        text = { Text("Select all") },
+                        text = { Text(stringResource(R.string.action_select_all)) },
                         onClick = { selectAll() }
                     )
                     DropdownMenuItem(
-                        text = { Text("Clear all") },
+                        text = { Text(stringResource(R.string.action_clear_all)) },
                         onClick = { clearAll(); canFillAnyRole = false }
                     )
                     Divider()
@@ -312,7 +320,7 @@ fun AddUser(
 
                                 navController.navigateUp()
                             }
-                        ) { Text("Accept") }
+                        ) { Text(stringResource(R.string.action_accept)) }
                     }
                     UserEditorMode.Edit -> {
                         Button(
@@ -330,7 +338,7 @@ fun AddUser(
                                 viewModel.replaceUserProfessions(updated.id, setToSave)
                                 navController.navigateUp()
                             }
-                        ) { Text("Save Changes") }
+                        ) { Text(stringResource(R.string.action_save_changes)) }
                     }
                 }
 
@@ -348,7 +356,7 @@ fun AddUser(
                                 canFillAnyRole = false
                                 selectedProfNames = emptySet()
                             }
-                        ) { Text("Delete") }
+                        ) { Text(stringResource(R.string.action_delete)) }
                     }
                     OutlinedButton(
                         onClick = {
@@ -359,14 +367,14 @@ fun AddUser(
                             selectedProfNames = emptySet()
                             if (mode == UserEditorMode.Edit) selectedUserId = null
                         }
-                    ) { Text("Reset") }
+                    ) { Text(stringResource(R.string.action_reset)) }
                 }
             }
         }
 
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = { navController.navigateUp() }) { Text("Back") }
+                TextButton(onClick = { navController.navigateUp() }) { Text(stringResource(R.string.common_back)) }
             }
         }
 

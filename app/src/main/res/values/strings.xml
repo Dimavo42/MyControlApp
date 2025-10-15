@@ -1,3 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">MyControlApp</string>
+    <string-array name="calendar_weekdays">
+        <item>Sun</item><item>Mon</item><item>Tue</item>
+        <item>Wed</item><item>Thu</item><item>Fri</item><item>Sat</item>
+    </string-array>
+
+    <string name="calendar_no_activities">No activities scheduled for this date.</string>
+    <string name="calendar_assign">Assign</string>
+    <string name="calendar_edit">Edit</string>
+    <string name="calendar_delete">Delete</string>
+    <string name="calendar_close">Close</string>
+    <string name="calendar_activities_on">Activities on %1$s</string>
+
+    <string name="app_title">Scheduler Assignment Project</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_add_activity">Add Activity</string>
+    <string name="nav_add_user">Add User</string>
+    <string name="nav_activities">Activities</string>
+
+    <string name="saved_activities_title">Saved Activities</string>
+    <string name="no_activities_in_month">No activities in %1$s.</string>
+    <string name="no_users_assigned">No users assigned to this activity.</string>
+    <string name="assigned_users_label">Assigned users:</string>
+
+    <string name="common_close">Close</string>
+    <string name="manage_button">Manage</string>
+
+    <string name="status_full">Full</string>
+
+    <string name="action_edit">Edit</string>
+    <string name="action_assign_ellipsis">Assign…</string>
+    <string name="action_assign">Assign</string>
+    <string name="action_delete">Delete</string>
+
+
+    <string name="common_back">Back</string>
+    <string name="common_clear">Clear</string>
+    <string name="unknown_user">(Unknown user)</string>
+
+    <!-- Assignment screen -->
+    <string name="assignment_not_found">Activity not found.</string>
+    <string name="assignment_title">Assignment</string>
+    <string name="editing_enabled">Editing enabled</string>
+    <string name="editing_disabled">Editing disabled</string>
+    <string name="label_activity_name">Activity Name</string>
+    <string name="title_needed_assignments">Needed assignments</string>
+    <string name="msg_all_roles_full">All required roles are fully assigned.</string>
+    <string name="title_existing_assignments">Existing assignments</string>
+    <string name="msg_no_assignments_yet">No assignments yet.</string>
+    <string name="action_unassign">Unassign</string>
+    <string name="action_save_activity">Save Activity</string>
+
+
+    <!-- Add/Edit User -->
+    <string name="add_user_title_add">Add new user to the app</string>
+    <string name="add_user_title_edit">Edit existing user</string>
+
+    <string name="tab_add">Add</string>
+    <string name="tab_edit">Edit</string>
+
+    <string name="label_select_user">Select user</string>
+    <string name="label_first_name">First Name</string>
+    <string name="label_last_name">Last Name</string>
+    <string name="label_skills_prefs">Skills / Preferences (comma separated)</string>
+    <string name="label_can_fill_any_role">Can fill any role</string>
+
+    <string name="label_professions_multi">Professions (multi-select)</string>
+    <string name="label_professions">Professions</string>
+    <string name="action_select_all">Select all</string>
+    <string name="action_clear_all">Clear all</string>
+    <string name="none_label">None</string>
+
+    <string name="action_accept">Accept</string>
+    <string name="action_save_changes">Save Changes</string>
+    <string name="action_reset">Reset</string>
+
+    <string name="time_error_invalid_date">Enter a valid date, e.g. %1$s</string>
+    <string name="time_pick_date">Pick date</string>
+    <string name="time_error_end_before_start">End must be after start</string>
+    <string name="time_label_date">Date (dd/MM/yyyy)</string>
+    <string name="time_label_start">Start (HH:mm)</string>
+    <string name="time_label_end">End (HH:mm)</string>
+
+
+    <string name="date_filter_title">Select the date for activities</string>
+    <string name="label_filter_by_user">Filter by user</string>
+    <string name="filter_all_users">All users</string>
+    <string name="action_show">Show</string>
+
+    <string name="keyword_all">all</string>
+    <string name="keyword_all_users">all users</string>
+
+    <string name="candidates_input_mode">Candidates input: %1$s</string>
+    <string name="mode_slider">Slider</string>
+    <string name="mode_text">Text</string>
+    <string name="select_number_of_candidates">Select number of candidates</string>
+    <string name="selected_n">Selected: %1$d</string>
+    <string name="number_of_candidates_range">Number of candidates (%1$d..%2$d)</string>
+
+    <string name="create_activity_title">Create activity</string>
+    <string name="error_selected_users_exceeds">You selected %1$d users but candidates limit is %2$d.</string>
+
+    <string name="dialog_select_item">Select Item</string>
+
+
+    <string name="no_available_users">No available users</string>
+    <string name="label_select_for_role">Select %1$s</string>
+
+    <string name="role_number">Role #%1$d</string>
+    <string name="label_profession">Profession</string>
+
+    <string-array name="month_names">
+        <item>January</item>
+        <item>February</item>
+        <item>March</item>
+        <item>April</item>
+        <item>May</item>
+        <item>June</item>
+        <item>July</item>
+        <item>August</item>
+        <item>September</item>
+        <item>October</item>
+        <item>November</item>
+        <item>December</item>
+    </string-array>
 </resources>

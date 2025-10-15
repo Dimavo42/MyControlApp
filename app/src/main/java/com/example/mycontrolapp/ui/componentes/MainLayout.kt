@@ -1,5 +1,4 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
-
 package com.example.mycontrolapp.ui.componentes
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -15,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -30,17 +30,19 @@ import com.example.mycontrolapp.ui.componentes.screens.AddUser
 import com.example.mycontrolapp.ui.componentes.screens.AssignmentScreen
 import com.example.mycontrolapp.ui.componentes.screens.HomeScreen
 import com.example.mycontrolapp.ui.componentes.screens.SavedActivities
+import com.example.mycontrolapp.R
 
 @Composable
 fun MainLayout() {
     val navController = rememberNavController()
 
     val bottomNavItems = listOf(
-        BottomNavItem("Home", Icons.Default.Home, AppDestinations.Home),
-        BottomNavItem("Add Activity", Icons.Default.Add, AppDestinations.Activity),
-        BottomNavItem("Add User", Icons.Default.Person, AppDestinations.AddUser),
-        BottomNavItem("Activities", Icons.Default.Done, AppDestinations.SavedActivities)
+        BottomNavItem(stringResource(R.string.nav_home), Icons.Default.Home, AppDestinations.Home),
+        BottomNavItem(stringResource(R.string.nav_add_activity), Icons.Default.Add, AppDestinations.Activity),
+        BottomNavItem(stringResource(R.string.nav_add_user), Icons.Default.Person, AppDestinations.AddUser),
+        BottomNavItem(stringResource(R.string.nav_activities), Icons.Default.Done, AppDestinations.SavedActivities)
     )
+
     fun baseRoute(route: String?): String? = route?.substringBefore("?")
 
     Scaffold(
@@ -48,7 +50,10 @@ fun MainLayout() {
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text("Scheduler Assignment Project", modifier = Modifier.testTag("topAppBarTitle"))
+                    Text(
+                        stringResource(R.string.app_title),
+                        modifier = Modifier.testTag("topAppBarTitle")
+                    )
                 },
                 modifier = Modifier.testTag("topAppBar")
             )
@@ -115,6 +120,7 @@ fun MainLayout() {
                     activityId = activityId
                 )
             }
+
             composable(
                 route = "${AppDestinations.ActivityWithDate}/{dateEpochDay}",
                 arguments = listOf(navArgument("dateEpochDay") { type = NavType.LongType })

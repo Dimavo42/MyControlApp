@@ -34,8 +34,8 @@ data class User(
         )
     ],
     indices = [
-        Index("userId"),           // index FK
-        Index("profession")        // fast lookups by role
+        Index("userId"),
+        Index("profession")
     ]
 )
 data class UserProfession(

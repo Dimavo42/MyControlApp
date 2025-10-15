@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">שליטה מלאה</string>
+    <string-array name="calendar_weekdays">
+        <item>א</item><item>ב</item><item>ג</item>
+        <item>ד</item><item>ה</item><item>ו</item><item>שבת</item>
+    </string-array>
+
+    <string name="calendar_no_activities">אין פעילויות בתאריך זה.</string>
+    <string name="calendar_assign">שייך</string>
+    <string name="calendar_edit">ערוך</string>
+    <string name="calendar_delete">מחק</string>
+    <string name="calendar_close">סגור</string>
+    <string name="calendar_activities_on">פעילויות בתאריך %1$s</string>
+
+    <string name="app_title">מערכת לניהול משימות</string>
+    <string name="nav_home">דף הבית</string>
+    <string name="nav_add_activity">הוסף פעילות</string>
+    <string name="nav_add_user">הוסף משתמש</string>
+    <string name="nav_activities">פעילויות</string>
+
+    <string name="saved_activities_title">פעילויות שמורות</string>
+    <string name="no_activities_in_month">אין פעילויות ב-%1$s.</string>
+    <string name="no_users_assigned">אין משתמשים משויכים לפעילות זו.</string>
+    <string name="assigned_users_label">משתמשים משויכים:</string>
+
+    <string name="common_close">סגור</string>
+    <string name="manage_button">ניהול</string>
+
+    <string name="status_full">מלא</string>
+
+    <string name="action_edit">ערוך</string>
+    <string name="action_assign_ellipsis">שייך…</string>
+    <string name="action_assign">שייך</string>
+    <string name="action_delete">מחק</string>
+
+
+
+    <string name="common_back">חזרה</string>
+    <string name="common_clear">נקה</string>
+    <string name="unknown_user">(משתמש לא ידוע)</string>
+
+    <!-- Assignment screen -->
+    <string name="assignment_not_found">הפעילות לא נמצאה.</string>
+    <string name="assignment_title">שיבוץ</string>
+    <string name="editing_enabled">עריכה מופעלת</string>
+    <string name="editing_disabled">עריכה מושבתת</string>
+    <string name="label_activity_name">שם פעילות</string>
+    <string name="title_needed_assignments">שיבוצים נדרשים</string>
+    <string name="msg_all_roles_full">כל התפקידים הנדרשים שובצו במלואם.</string>
+    <string name="title_existing_assignments">שיבוצים קיימים</string>
+    <string name="msg_no_assignments_yet">אין עדיין שיבוצים.</string>
+    <string name="action_unassign">בטל שיבוץ</string>
+    <string name="action_save_activity">שמור פעילות</string>
+
+
+    <!-- Add/Edit User -->
+    <string name="add_user_title_add">הוסף משתמש חדש לאפליקציה</string>
+    <string name="add_user_title_edit">ערוך משתמש קיים</string>
+
+    <string name="tab_add">הוסף</string>
+    <string name="tab_edit">ערוך</string>
+
+    <string name="label_select_user">בחר משתמש</string>
+    <string name="label_first_name">שם פרטי</string>
+    <string name="label_last_name">שם משפחה</string>
+    <string name="label_skills_prefs">כישורים / העדפות (מופרדים בפסיק)</string>
+    <string name="label_can_fill_any_role">יכול לבצע כל תפקיד</string>
+
+    <string name="label_professions_multi">מקצועות (בחירה מרובה)</string>
+    <string name="label_professions">מקצועות</string>
+    <string name="action_select_all">בחר הכול</string>
+    <string name="action_clear_all">נקה הכול</string>
+    <string name="none_label">ללא</string>
+
+    <string name="action_accept">אשר</string>
+    <string name="action_save_changes">שמור שינויים</string>
+    <string name="action_reset">איפוס</string>
+
+    <string name="time_error_invalid_date">הזן תאריך חוקי, למשל %1$s</string>
+    <string name="time_pick_date">בחר תאריך</string>
+    <string name="time_error_end_before_start">שעת הסיום חייבת להיות אחרי שעת ההתחלה</string>
+    <string name="time_label_date">תאריך (dd/MM/yyyy)</string>
+    <string name="time_label_start">התחלה (HH:mm)</string>
+    <string name="time_label_end">סיום (HH:mm)</string>
+
+    <string name="date_filter_title">בחר תאריך לפעילויות</string>
+    <string name="label_filter_by_user">סינון לפי משתמש</string>
+    <string name="filter_all_users">כל המשתמשים</string>
+    <string name="action_show">הצג</string>
+    <string name="keyword_all">הכל</string>
+    <string name="keyword_all_users">כל המשתמשים</string>
+
+    <string name="candidates_input_mode">קלט מועמדים: %1$s</string>
+    <string name="mode_slider">מחוון</string>
+    <string name="mode_text">טקסט</string>
+    <string name="select_number_of_candidates">בחר מספר מועמדים</string>
+    <string name="selected_n">נבחר: %1$d</string>
+    <string name="number_of_candidates_range">מספר מועמדים (%1$d..%2$d)</string>
+
+    <string name="create_activity_title">יצירת פעילות</string>
+    <string name="error_selected_users_exceeds">בחרת %1$d משתמשים אך מספר המועמדים המותר הוא %2$d.</string>
+
+    <string name="dialog_select_item">בחר פריט</string>
+
+    <string name="no_available_users">אין משתמשים זמינים</string>
+    <string name="label_select_for_role">בחר %1$s</string>
+
+    <string name="role_number">תפקיד מס׳ %1$d</string>
+    <string name="label_profession">מקצוע</string>
+
+    <string-array name="month_names">
+        <item>ינואר</item>
+        <item>פברואר</item>
+        <item>מרץ</item>
+        <item>אפריל</item>
+        <item>מאי</item>
+        <item>יוני</item>
+        <item>יולי</item>
+        <item>אוגוסט</item>
+        <item>ספטמבר</item>
+        <item>אוקטובר</item>
+        <item>נובמבר</item>
+        <item>דצמבר</item>
+    </string-array>
+</resources>

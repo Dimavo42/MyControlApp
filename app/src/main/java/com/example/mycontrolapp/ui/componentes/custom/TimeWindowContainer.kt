@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -17,6 +18,7 @@ import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.format.ResolverStyle
 import java.util.Locale
+import com.example.mycontrolapp.R
 
 /**
  * Result computed by the container from the three inputs.
@@ -128,7 +130,7 @@ fun TimeWindowContainer(
             isError = showErrors && dateText.text.isNotBlank() && parsedDate == null,
             supportingText = {
                 if (showErrors && dateText.text.isNotBlank() && parsedDate == null) {
-                    Text("Enter a valid date, e.g. 07/10/2025")
+                    Text(stringResource(R.string.time_error_invalid_date, "07/10/2025"))
                 }
             },
             trailingIcon = {
@@ -146,7 +148,10 @@ fun TimeWindowContainer(
                             ).show()
                         }
                     ) {
-                        Icon(Icons.Filled.DateRange, contentDescription = "Pick date")
+                        Icon(
+                            Icons.Filled.DateRange,
+                            contentDescription = stringResource(R.string.time_pick_date)
+                        )
                     }
                 }
             },
@@ -178,7 +183,7 @@ fun TimeWindowContainer(
                         (parsedEnd == null || (parsedStart != null && parsedEnd != null && !endAfterStart)),
                 supportingText = {
                     if (showErrors && parsedStart != null && parsedEnd != null && !endAfterStart) {
-                        Text("End must be after start")
+                        Text(stringResource(R.string.time_error_end_before_start))
                     }
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),

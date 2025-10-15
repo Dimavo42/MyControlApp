@@ -4,13 +4,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.mycontrolapp.logic.User
 import java.time.*
+import com.example.mycontrolapp.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,24 +23,19 @@ fun DateFilterWithShow(
     content: @Composable (displayedYearMonth: YearMonth, selectedUser: User?) -> Unit
 ) {
     val nowYm = YearMonth.now()
-
-    // Month/Year menus
+    val ctx = LocalContext.current
     var monthMenu by rememberSaveable { mutableStateOf(false) }
     var yearMenu by rememberSaveable { mutableStateOf(false) }
 
-    // Month/Year selection
     var selectedMonth by rememberSaveable { mutableStateOf(nowYm.month) }
     var selectedYear by rememberSaveable { mutableStateOf(nowYm.year) }
 
-    // Committed user selection (null = All users)
     var selectedUserId by rememberSaveable { mutableStateOf<String?>(null) }
     val selectedUser: User? = remember(users, selectedUserId) { users.firstOrNull { it.id == selectedUserId } }
 
-    // Text shown/edited in the field (independent, only synced on commit or revert)
-    val committedLabel = selectedUser?.name ?: "All users"
+    val committedLabel = selectedUser?.name ?: stringResource(R.string.filter_all_users)
     var userQuery by rememberSaveable { mutableStateOf(committedLabel) }
 
-    // Displayed calendar YM
     var calendarYm by rememberSaveable { mutableStateOf(nowYm) }
 
     val years = remember {
@@ -46,10 +43,11 @@ fun DateFilterWithShow(
         (base - 5..base + 5).toList()
     }
 
-    // Dropdown for full list (opens via chevron only)
     var userMenuExpanded by rememberSaveable { mutableStateOf(false) }
 
-    // Matching helpers (no suggestions UI, only apply on Show)
+    // Localized month labels
+    val monthLabels = stringArrayResource(id = R.array.month_names)
+
     fun exactMatch(q: String): User? =
         users.firstOrNull { it.name.equals(q, ignoreCase = true) }
 
@@ -65,35 +63,29 @@ fun DateFilterWithShow(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            "Select the date for activities",
+            stringResource(R.string.date_filter_title),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.testTag("lblSelectDate")
         )
 
-        // ── Row 1: User filter (no suggestions; chevron opens full list) ──
         ExposedDropdownMenuBox(
             expanded = userMenuExpanded,
-            onExpandedChange = { /* only chevron toggles */ },
+            onExpandedChange = { /* chevron only */ },
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("userFilterRow")
         ) {
             OutlinedTextField(
                 value = userQuery,
-                onValueChange = { text ->
-                    // Let the user freely type/delete; don't auto-select here
-                    userQuery = text
-                },
+                onValueChange = { userQuery = it },
                 enabled = users.isNotEmpty(),
-                label = { Text("Filter by user") },
+                label = { Text(stringResource(R.string.label_filter_by_user)) },
                 singleLine = true,
                 trailingIcon = {
                     IconButton(
                         onClick = { if (users.isNotEmpty()) userMenuExpanded = !userMenuExpanded },
                         enabled = users.isNotEmpty()
-                    ) {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = userMenuExpanded)
-                    }
+                    ) { ExposedDropdownMenuDefaults.TrailingIcon(expanded = userMenuExpanded) }
                 },
                 modifier = Modifier
                     .menuAnchor()
@@ -105,23 +97,21 @@ fun DateFilterWithShow(
                 expanded = userMenuExpanded,
                 onDismissRequest = { userMenuExpanded = false }
             ) {
-                // "All users"
                 DropdownMenuItem(
-                    text = { Text("All users") },
+                    text = { Text(stringResource(R.string.filter_all_users)) },
                     onClick = {
                         selectedUserId = null
-                        userQuery = "All users" // commit label
+                        userQuery = ctx.getString(R.string.filter_all_users) // << getString in callback
                         userMenuExpanded = false
                     },
                     modifier = Modifier.testTag("user_all")
                 )
-                // Actual users
                 users.forEach { u ->
                     DropdownMenuItem(
                         text = { Text(u.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                         onClick = {
                             selectedUserId = u.id
-                            userQuery = u.name // commit label
+                            userQuery = u.name
                             userMenuExpanded = false
                         },
                         modifier = Modifier.testTag("user_${u.id}")
@@ -130,7 +120,6 @@ fun DateFilterWithShow(
             }
         }
 
-        // ── Row 2: Month | Year | Show ──
         Row(
             Modifier
                 .fillMaxWidth()
@@ -141,18 +130,13 @@ fun DateFilterWithShow(
             Box(modifier = Modifier.weight(1.5f)) {
                 Button(
                     onClick = { monthMenu = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("btnMonth")
-                ) { Text(selectedMonth.name) }
+                    modifier = Modifier.fillMaxWidth().testTag("btnMonth")
+                ) { Text(monthLabels[selectedMonth.value - 1]) }
 
-                DropdownMenu(
-                    expanded = monthMenu,
-                    onDismissRequest = { monthMenu = false }
-                ) {
+                DropdownMenu(expanded = monthMenu, onDismissRequest = { monthMenu = false }) {
                     Month.values().forEach { m ->
                         DropdownMenuItem(
-                            text = { Text(m.name) },
+                            text = { Text(monthLabels[m.value - 1]) },
                             onClick = {
                                 selectedMonth = m
                                 monthMenu = false
@@ -167,15 +151,10 @@ fun DateFilterWithShow(
             Box(modifier = Modifier.weight(1f)) {
                 Button(
                     onClick = { yearMenu = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("btnYear")
+                    modifier = Modifier.fillMaxWidth().testTag("btnYear")
                 ) { Text(selectedYear.toString()) }
 
-                DropdownMenu(
-                    expanded = yearMenu,
-                    onDismissRequest = { yearMenu = false }
-                ) {
+                DropdownMenu(expanded = yearMenu, onDismissRequest = { yearMenu = false }) {
                     years.forEach { y ->
                         DropdownMenuItem(
                             text = { Text(y.toString()) },
@@ -189,16 +168,20 @@ fun DateFilterWithShow(
                 }
             }
 
-            // Show (apply filters)
+            // Show
             Button(
                 onClick = {
                     val q = userQuery.trim()
-                    var effectiveUser: User? = selectedUser // default: keep current selection
+                    var effectiveUser: User? = selectedUser
+
+                    val kwAll = ctx.getString(R.string.keyword_all)             // << use ctx here
+                    val kwAllUsers = ctx.getString(R.string.keyword_all_users)
+                    val allUsers = ctx.getString(R.string.filter_all_users)
 
                     when {
-                        q.equals("all", true) || q.equals("all users", true) -> {
+                        q.equals(kwAll, true) || q.equals(kwAllUsers, true) || q.equals(allUsers, true) -> {
                             selectedUserId = null
-                            userQuery = "All users"
+                            userQuery = allUsers
                             effectiveUser = null
                         }
                         q.isNotEmpty() -> {
@@ -209,27 +192,20 @@ fun DateFilterWithShow(
                                 userQuery = unique.name
                                 effectiveUser = unique
                             } else {
-                                // Not identifiable → revert the field back to the committed label
                                 userQuery = committedLabel
                             }
                         }
-                        else -> {
-                            // Empty query → revert to committed label
-                            userQuery = committedLabel
-                        }
+                        else -> userQuery = committedLabel
                     }
 
                     val ym = YearMonth.of(selectedYear, selectedMonth)
                     calendarYm = ym
                     onShow(ym, effectiveUser)
                 },
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag("btnShow")
-            ) { Text("Show") }
+                modifier = Modifier.weight(1f).testTag("btnShow")
+            ) { Text(stringResource(R.string.action_show)) }
         }
 
-        // Render caller content with the effective YM and selected user
         content(calendarYm, selectedUser)
     }
 }

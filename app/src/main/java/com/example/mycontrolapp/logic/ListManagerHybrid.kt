@@ -13,7 +13,7 @@ import dagger.Lazy
 class ListManagerHybrid @Inject constructor(
     private val room: ListManagerRoom,
     private val db: AppDb,
-    private val remoteLazy: Lazy<FirebaseDataSource>,   // <-- lazy, not eager
+    private val remoteLazy: Lazy<FirebaseDataSource>,
     @RemoteEnabled private val remoteEnabled: Boolean
 ) : ListManager by room {
 

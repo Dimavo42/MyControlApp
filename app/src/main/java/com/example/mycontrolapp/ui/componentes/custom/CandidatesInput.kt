@@ -18,10 +18,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
+import com.example.mycontrolapp.R
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,7 +52,12 @@ fun CandidatesInput(
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Candidates input: ${if (useSlider) "Slider" else "Text"}")
+            Text(
+                text = stringResource(
+                    R.string.candidates_input_mode,
+                    if (useSlider) stringResource(R.string.mode_slider) else stringResource(R.string.mode_text)
+                )
+            )
             Switch(
                 checked = useSlider,
                 onCheckedChange = { useSlider = it },
@@ -59,7 +66,7 @@ fun CandidatesInput(
         }
 
         if (useSlider) {
-            Text("Select number of candidates")
+            Text(stringResource(R.string.select_number_of_candidates))
             Slider(
                 value = sliderValue,
                 onValueChange = {
@@ -75,7 +82,7 @@ fun CandidatesInput(
                     .fillMaxWidth()
                     .testTag("${testTagPrefix}_slider")
             )
-            Text("Selected: ${sliderValue.roundToInt()}")
+            Text(stringResource(R.string.selected_n, sliderValue.roundToInt()))
         } else {
             OutlinedTextField(
                 value = text,
@@ -92,7 +99,7 @@ fun CandidatesInput(
                     }
                     // if empty or invalid, don't push changes up yet; wait until valid
                 },
-                label = { Text("Number of candidates ($min..$max)") },
+                label = { Text(stringResource(R.string.number_of_candidates_range, min, max)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number,

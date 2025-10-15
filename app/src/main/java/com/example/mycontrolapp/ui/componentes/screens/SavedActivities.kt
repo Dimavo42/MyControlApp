@@ -1,4 +1,5 @@
 package com.example.mycontrolapp.ui.componentes.screens
+import android.annotation.SuppressLint
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -7,15 +8,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.mycontrolapp.ui.componentes.ActivityViewModel
 import com.example.mycontrolapp.ui.componentes.DateFilterWithShow
-import java.time.LocalDate
 import java.time.YearMonth
+import com.example.mycontrolapp.R
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
+@SuppressLint("LocalContextConfigurationRead")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SavedActivities(
@@ -36,7 +42,7 @@ fun SavedActivities(
     Scaffold(
         topBar = {
             Text(
-                "Saved Activities",
+                text = stringResource(R.string.saved_activities_title),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(16.dp)
             )
@@ -52,6 +58,13 @@ fun SavedActivities(
                 viewModel.setSelectedUser(userOrNull?.id) // null => All users
             }
         ) { displayedYm, _ ->
+            val context = LocalContext.current
+            val locale = remember { context.resources.configuration.locales[0] ?: Locale.getDefault() }
+            val monthYearLabel = remember(displayedYm, locale) {
+                // Localized full month name + year (e.g., "October 2025" / "אוקטובר 2025")
+                displayedYm.atDay(1).format(DateTimeFormatter.ofPattern("LLLL yyyy", locale))
+            }
+
             if (awuFiltered.isEmpty()) {
                 Box(
                     Modifier
@@ -59,7 +72,7 @@ fun SavedActivities(
                         .padding(horizontal = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No activities in ${displayedYm.month} ${displayedYm.year}.")
+                    Text(stringResource(R.string.no_activities_in_month, monthYearLabel))
                 }
             } else {
                 LazyColumn(
@@ -108,10 +121,10 @@ fun SavedActivities(
             title = { Text(item.activity.name) },
             text = {
                 if (item.users.isEmpty()) {
-                    Text("No users assigned to this activity.")
+                    Text(stringResource(R.string.no_users_assigned))
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("Assigned users:")
+                        Text(stringResource(R.string.assigned_users_label))
                         item.users.forEach { user ->
                             Text("• ${user.name}", maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
@@ -119,7 +132,9 @@ fun SavedActivities(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { selected = null }) { Text("Close") }
+                TextButton(onClick = { selected = null }) {
+                    Text(stringResource(R.string.common_close))
+                }
             },
             dismissButton = {
                 TextButton(
@@ -128,7 +143,7 @@ fun SavedActivities(
                         selected = null
                         navController.navigate("assignment/$id")
                     }
-                ) { Text("Manage") }
+                ) { Text(stringResource(R.string.manage_button)) }
             }
         )
     }
@@ -171,15 +186,12 @@ private fun ActivityRow(
                 else
                     MaterialTheme.typography.bodyMedium
 
-                Text(
-                    text = counter,
-                    style = counterStyle
-                )
+                Text(text = counter, style = counterStyle)
 
                 if (isFullyAssigned) {
                     AssistChip(
-                        onClick = { /* no-op / purely informative */ },
-                        label = { Text("Full") }
+                        onClick = { /* info only */ },
+                        label = { Text(stringResource(R.string.status_full)) }
                     )
                 }
             }
@@ -188,18 +200,16 @@ private fun ActivityRow(
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (isFullyAssigned) {
-                    // Fully assigned → show a filled button labeled "Edit"
                     Button(onClick = onAssignOrEditClick) {
-                        Text("Edit")
+                        Text(stringResource(R.string.action_edit))
                     }
                 } else {
-                    // Not full → show outlined "Assign…" button
                     OutlinedButton(onClick = onAssignOrEditClick) {
-                        Text("Assign…")
+                        Text(stringResource(R.string.action_assign_ellipsis))
                     }
                 }
                 OutlinedButton(onClick = onDeleteClick) {
-                    Text("Delete")
+                    Text(stringResource(R.string.action_delete))
                 }
             }
         }

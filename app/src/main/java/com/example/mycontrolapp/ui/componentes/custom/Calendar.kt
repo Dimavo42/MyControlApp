@@ -10,6 +10,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -20,10 +22,11 @@ import androidx.navigation.NavController
 import com.example.myapp.appNavigation.AppDestinations
 import com.example.mycontrolapp.logic.Activity
 import com.example.mycontrolapp.ui.componentes.ActivityViewModel
-import kotlinx.coroutines.flow.Flow
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import com.example.mycontrolapp.R
 
 
 @Composable
@@ -38,16 +41,17 @@ fun CalendarView(
     var showDialog by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
-    // === Collect counters ONCE (single subscription for the whole list) ===
+    // counters for each activity
     val countsByActivityId by viewModel.activityCountersFlow.collectAsState(initial = emptyMap())
 
-    // === Month math & labels (cached per yearMonth) ===
-    val dayLabels = remember { DayOfWeek.entries.map { it.name.take(3) } }
+    val dayLabels = stringArrayResource(id = R.array.calendar_weekdays).toList()
+
+    // Month math
     val firstOfMonth = remember(yearMonth) { LocalDate.of(yearMonth.year, yearMonth.month, 1) }
-    val startOffset = remember(yearMonth) { firstOfMonth.dayOfWeek.value - 1 /* Mon=1..Sun=7 -> 0..6 */ }
+    // Make Sunday = 0, Monday = 1, ... Saturday = 6
+    val startOffset = remember(yearMonth) { firstOfMonth.dayOfWeek.value % 7 }
     val daysInMonth = remember(yearMonth) { yearMonth.lengthOfMonth() }
 
-    // Build a 6x7 grid (42 cells) with nulls for leading/trailing blanks
     val cells: List<LocalDate?> = remember(yearMonth) {
         buildList<LocalDate?>(42) {
             repeat(startOffset) { add(null) }
@@ -61,7 +65,6 @@ fun CalendarView(
             .padding(16.dp)
             .testTag("calendarRoot")
     ) {
-        // Header row with weekday names
         Row(
             Modifier
                 .fillMaxWidth()
@@ -131,12 +134,17 @@ fun CalendarView(
         val date = selectedDate!!
         val activitiesForSelected = eventsByDate[date].orEmpty()
 
+        // Localized date formatting (system locale)
+        val dateLabel = remember(date) {
+            date.format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault()))
+        }
+
         AlertDialog(
             modifier = Modifier.testTag("dialog_activities_${date}"),
             onDismissRequest = { showDialog = false },
             title = {
                 Text(
-                    "Activities on $date",
+                    stringResource(R.string.calendar_activities_on, dateLabel),
                     modifier = Modifier.testTag("dialogTitle_${date}")
                 )
             },
@@ -176,7 +184,7 @@ fun CalendarView(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            "No activities scheduled for this date.",
+                            stringResource(R.string.calendar_no_activities),
                             modifier = Modifier.testTag("dialogEmpty_${date}")
                         )
                         Button(
@@ -189,7 +197,7 @@ fun CalendarView(
                                 navController.navigate("${AppDestinations.ActivityWithDate}/$epochDay")
                             }
                         ) {
-                            Text("Assign")
+                            Text(stringResource(R.string.calendar_assign))
                         }
                     }
                 }
@@ -198,7 +206,7 @@ fun CalendarView(
                 TextButton(
                     modifier = Modifier.testTag("btnCloseDialog_${date}"),
                     onClick = { showDialog = false }
-                ) { Text("Close") }
+                ) { Text(stringResource(R.string.calendar_close)) }
             }
         )
     }
@@ -214,7 +222,7 @@ private fun ActivityRowInDialog(
 ) {
     // Full when there is a requirement and assigned >= required; if required=0 treat as full → show Edit
     val isFull = if (requiredCount > 0) assignedCount >= requiredCount else true
-    val primaryLabel = if (isFull) "Edit" else "Assign"
+    val primaryLabelRes = if (isFull) R.string.calendar_edit else R.string.calendar_assign
 
     Row(
         modifier = Modifier
@@ -239,7 +247,7 @@ private fun ActivityRowInDialog(
                 onClick = onPrimaryClick,
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
             ) {
-                Text(primaryLabel, fontSize = 12.sp)
+                Text(stringResource(primaryLabelRes), fontSize = 12.sp)
             }
 
             Button(
@@ -251,7 +259,7 @@ private fun ActivityRowInDialog(
                     contentColor = MaterialTheme.colorScheme.onErrorContainer
                 )
             ) {
-                Text("Delete", fontSize = 12.sp)
+                Text(stringResource(R.string.calendar_delete), fontSize = 12.sp)
             }
         }
     }

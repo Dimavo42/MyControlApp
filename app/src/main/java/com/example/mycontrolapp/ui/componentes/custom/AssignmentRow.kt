@@ -16,12 +16,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.mycontrolapp.logic.User
 import com.example.mycontrolapp.logic.sharedEnums.Profession
 import kotlin.collections.forEach
+import com.example.mycontrolapp.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,9 +56,9 @@ fun AssignmentRow(
         ) {
             OutlinedTextField(
                 readOnly = true,
-                value = if (hasOptions) (selected?.name ?: "") else "No available users",
+                value = if (hasOptions) (selected?.name ?: "") else stringResource(R.string.no_available_users),
                 onValueChange = {},
-                label = { Text("Select ${profession.label}") },
+                label = { Text(stringResource(R.string.label_select_for_role, profession.label)) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 enabled = hasOptions,
                 modifier = Modifier
@@ -83,6 +85,6 @@ fun AssignmentRow(
             onClick = onAssign,
             enabled = enabled,
             modifier = Modifier.weight(1f)
-        ) { Text("Assign") }
+        ) { Text(stringResource(R.string.action_assign)) }
     }
 }

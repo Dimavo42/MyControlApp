@@ -15,7 +15,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.mycontrolapp.R
 
 @Composable
 fun <T> LazyAlertDialogButton(
@@ -43,7 +45,7 @@ fun <T> LazyAlertDialogButton(
             onDismissRequest = { showDialog = false },
             title = {
                 Text(
-                    "Select Item",
+                    stringResource(R.string.dialog_select_item),
                     modifier = Modifier.testTag("dialogTitle_$title")
                 )
             },
@@ -74,7 +76,7 @@ fun <T> LazyAlertDialogButton(
                     modifier = Modifier.testTag("btnCloseDialog_$title"),
                     onClick = { showDialog = false }
                 ) {
-                    Text("Close")
+                    Text(stringResource(R.string.common_close))
                 }
             }
         )
