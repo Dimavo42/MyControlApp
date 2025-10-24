@@ -16,3 +16,4 @@ data class RoleNeed(
     val profession: Profession,
     val seatIndex: Int
 )
+

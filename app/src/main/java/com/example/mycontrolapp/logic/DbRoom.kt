@@ -1,8 +1,12 @@
 package com.example.mycontrolapp.logic
 import androidx.room.*
 import com.example.mycontrolapp.logic.sharedEnums.Profession
+import com.example.mycontrolapp.logic.sharedEnums.Team
 import java.time.LocalDate
 import java.util.*
+
+
+
 
 @Entity(tableName = "users")
 data class User(
@@ -10,7 +14,8 @@ data class User(
     val name: String,
     val skills: List<String> = emptyList(),
     val isActive: Boolean = true,
-    val canFillAnyRole: Boolean = false
+    val canFillAnyRole: Boolean = false,
+    val team: Team? = null
 ) {
     override fun toString(): String {
         val skillsString = if (skills.isEmpty()) "No skills" else skills.joinToString("|")

@@ -1,6 +1,7 @@
 package com.example.mycontrolapp.logic
 import androidx.room.TypeConverter
 import com.example.mycontrolapp.logic.sharedEnums.Profession
+import com.example.mycontrolapp.logic.sharedEnums.Team
 import java.time.LocalDate
 import java.util.*
 
@@ -30,6 +31,14 @@ class Converters {
     @TypeConverter
     fun toLocalDate(epoch: Int?): LocalDate? =
         epoch?.toLong()?.let(LocalDate::ofEpochDay)
+
+    @TypeConverter
+    fun fromTeam(value: Team?): String? = value?.name
+
+    @TypeConverter
+    fun toTeam(value: String?): Team? =
+        value?.let { runCatching { Team.valueOf(it) }.getOrElse { Team.Unknown } }
+
 
     /* ---------- Profession <-> String ---------- */
     @TypeConverter

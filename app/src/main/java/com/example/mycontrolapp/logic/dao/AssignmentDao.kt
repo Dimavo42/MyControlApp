@@ -9,6 +9,7 @@ import com.example.mycontrolapp.logic.Assignment
 import com.example.mycontrolapp.logic.User
 import com.example.mycontrolapp.logic.sharedData.AssignedCountRow
 import com.example.mycontrolapp.logic.sharedEnums.Profession
+import com.example.mycontrolapp.logic.sharedEnums.Team
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -29,6 +30,13 @@ interface AssignmentDao {
         GROUP BY activityId
     """)
     fun assignedCountsAllFlow(): Flow<List<AssignedCountRow>>
+
+    @Query("""
+        DELETE FROM assignments
+        WHERE activityId = :activityId
+          AND userId IN (SELECT id FROM users WHERE team = :team)
+    """)
+    suspend fun deleteAssignmentsForActivityByTeam(activityId: String, team: Team): Int
 
     @Query("DELETE FROM assignments WHERE activityId = :activityId AND userId = :userId")
     suspend fun delete(activityId: String, userId: String)
@@ -62,10 +70,9 @@ interface AssignmentDao {
     """)
     fun streamActivitiesForUser(userId: String): Flow<List<Activity>>
 
-
     @Query("SELECT COUNT(*) FROM assignments WHERE activityId = :activityId AND role = :role")
-    fun countByActivityAndRoleFlow(activityId: String, role: Profession): kotlinx.coroutines.flow.Flow<Int>
+    fun countByActivityAndRoleFlow(activityId: String, role: Profession): Flow<Int>
 
     @Query("SELECT * FROM assignments WHERE activityId = :activityId")
-    fun assignmentsForActivityFlow(activityId: String): kotlinx.coroutines.flow.Flow<List<Assignment>>
+    fun assignmentsForActivityFlow(activityId: String): Flow<List<Assignment>>
 }
