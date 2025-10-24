@@ -6,6 +6,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -220,6 +221,29 @@ fun AssignmentScreen(
                     .semantics { contentDescription = "resourceId:timeWindow" }
             )
         }
+        // Save activity (edit fields)
+        if (useEdit) {
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(
+                        enabled = canSave,
+                        onClick = {
+                            val updated: Activity = activity.copy(
+                                name = name.trim(),
+                                startAt = computed.startAtMillis!!,
+                                endAt = computed.endAtMillis!!,
+                                dateEpochDay = computed.dateEpochDay!!
+                            )
+                            viewModel.updateActivity(updated)
+                            useEdit = false
+                        },
+                        modifier = Modifier
+                            .testTag("btnSaveActivity")
+                            .semantics { contentDescription = "resourceId:btnSaveActivity" }
+                    ) { Text(stringResource(R.string.action_save_activity)) }
+                }
+            }
+        }
 
         // ------------------ Needed assignments ------------------
         item {
@@ -317,32 +341,12 @@ fun AssignmentScreen(
             }
         }
 
-        // Save activity (edit fields)
-        if (useEdit) {
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Button(
-                        enabled = canSave,
-                        onClick = {
-                            val updated: Activity = activity.copy(
-                                name = name.trim(),
-                                startAt = computed.startAtMillis!!,
-                                endAt = computed.endAtMillis!!,
-                                dateEpochDay = computed.dateEpochDay!!
-                            )
-                            viewModel.updateActivity(updated)
-                            useEdit = false
-                        },
-                        modifier = Modifier
-                            .testTag("btnSaveActivity")
-                            .semantics { contentDescription = "resourceId:btnSaveActivity" }
-                    ) { Text(stringResource(R.string.action_save_activity)) }
-                }
-            }
-        }
 
-        // Bottom actions
+
+        // ------------------ Bottom actions ------------------
         item {
+            val allSeatsFilled = neededSeats.isEmpty()
+
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(
                     onClick = { /* optional local reset */ },
@@ -351,12 +355,27 @@ fun AssignmentScreen(
                         .semantics { contentDescription = "resourceId:btnClearSelections" }
                 ) { Text(stringResource(R.string.common_clear)) }
 
-                OutlinedButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier
-                        .testTag("btnBack")
-                        .semantics { contentDescription = "resourceId:btnBack" }
-                ) { Text(stringResource(R.string.common_back)) }
+                if (allSeatsFilled) {
+                    // Green filled Back when all roles/seats are filled
+                    Button(
+                        onClick = { navController.popBackStack() },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF2E7D32),   // ✅ green
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier
+                            .testTag("btnBack")
+                            .semantics { contentDescription = "resourceId:btnBack" }
+                    ) { Text(stringResource(R.string.common_back)) }
+                } else {
+                    // Default outlined Back otherwise
+                    OutlinedButton(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier
+                            .testTag("btnBack")
+                            .semantics { contentDescription = "resourceId:btnBack" }
+                    ) { Text(stringResource(R.string.common_back)) }
+                }
             }
         }
     }

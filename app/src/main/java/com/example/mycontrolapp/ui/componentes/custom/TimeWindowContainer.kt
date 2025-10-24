@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -20,9 +21,6 @@ import java.time.format.ResolverStyle
 import java.util.Locale
 import com.example.mycontrolapp.R
 
-/**
- * Result computed by the container from the three inputs.
- */
 data class ComputedTimeWindow(
     val isDateValid: Boolean,
     val isStartValid: Boolean,
@@ -59,6 +57,7 @@ fun TimeWindowContainer(
     enabled: Boolean = true,
     showErrors: Boolean = true,
     zone: ZoneId = ZoneId.systemDefault(),
+    allowOvernight: Boolean = false, // set true to allow 22:00 -> 01:00 (next day)
     onComputedChange: (ComputedTimeWindow) -> Unit = {}
 ) {
     val ctx = LocalContext.current
@@ -94,9 +93,42 @@ fun TimeWindowContainer(
             ZonedDateTime.of(parsedDate, parsedEnd, zone).toInstant().toEpochMilli()
         else null
     }
-    val endAfterStart = remember(startAt, endAt) {
-        startAt != null && endAt != null && endAt > startAt
+
+    // Time-only comparison (used when date is not set/valid).
+    val endAfterStartTimeOnly = remember(parsedStart, parsedEnd, allowOvernight) {
+        if (parsedStart == null || parsedEnd == null) {
+            false
+        } else if (allowOvernight) {
+            // Example: 22:00 -> 01:00 should be considered valid
+            parsedEnd.isAfter(parsedStart) || parsedEnd == parsedStart
+                    || (!parsedEnd.isAfter(parsedStart)) // will be valid because it's "next day"
+        } else {
+            parsedEnd.isAfter(parsedStart)
+        }
     }
+
+    // Final validity:
+    // - If date is missing, rely on time-only comparison.
+    // - If date exists, compare millis (and optionally allow overnight by adding 1 day to end if needed).
+    val endAfterStart = remember(parsedDate, parsedStart, parsedEnd, startAt, endAt, allowOvernight) {
+        when {
+            parsedStart == null || parsedEnd == null -> false
+            parsedDate == null -> endAfterStartTimeOnly
+            else -> {
+                if (startAt == null || endAt == null) {
+                    false
+                } else {
+                    val s = startAt
+                    var e = endAt
+                    if (allowOvernight && e <= s) {
+                        e += Duration.ofDays(1).toMillis()
+                    }
+                    e > s
+                }
+            }
+        }
+    }
+
     val dateEpochDay = remember(parsedDate) { parsedDate?.toEpochDay()?.toInt() }
 
     // Emit computed result upward whenever inputs change
@@ -123,7 +155,7 @@ fun TimeWindowContainer(
             value = dateText,
             enabled = enabled,
             onValueChange = { tf ->
-                onDateTextChange(tf.copy(text = formatAsDdMmYyyy(tf.text))) // keep mask dd/MM/yyyy
+                onDateTextChange(tf)
             },
             label = { Text(labelDate) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -195,17 +227,6 @@ fun TimeWindowContainer(
 
 /* -------------------------- Helpers (shared) -------------------------- */
 
-// Mask dd/MM/yyyy while typing
-fun formatAsDdMmYyyy(raw: String): String {
-    val digits = raw.filter { it.isDigit() }.take(8) // ddMMyyyy
-    val sb = StringBuilder()
-    for (i in digits.indices) {
-        sb.append(digits[i])
-        if (i == 1 || i == 3) sb.append('/')
-    }
-    return sb.toString().take(10)
-}
-
 // Mask HH:mm while typing (00..23 : 00..59)
 fun formatAsHhMm(raw: String): String {
     val digits = raw.filter { it.isDigit() }.take(4) // HHmm
@@ -224,7 +245,9 @@ private fun parseDdMmYyyyOrNull(text: String): Calendar? {
     return try {
         val date = fmt.parse(text) ?: return null
         Calendar.getInstance().apply { time = date }
-    } catch (_: Exception) { null }
+    } catch (_: Exception) {
+        null
+    }
 }
 
 // java.time LocalDate parser (strict)

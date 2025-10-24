@@ -15,7 +15,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -174,14 +177,67 @@ class ActivityViewModel @Inject constructor(
     fun roleRequirementsFlow(activityId: String): Flow<List<ActivityRoleRequirement>> =
         listManager.roleRequirementsFlow(activityId)
 
+
+
     fun usersNotAssignedToActivity(activityId: String): Flow<List<User>> =
-        combine(usersFlow, assignmentsFlow) { users, assignments ->
-            val assignedIds = assignments.asSequence()
+        combine(
+            usersFlow,                        // Flow<List<User>>
+            assignmentsFlow,                  // Flow<List<Assignment>>
+            roleRequirementsFlow(activityId), // Flow<List<RoleRequirement>>
+            userProfessionsAllFlow            // Flow<Map<String, Set<Profession>>>
+        ) { users, assignments, requiredRoles, profMap ->
+
+            // 1) Who's already assigned to this activity?
+            val assignedIds: Set<String> = assignments.asSequence()
                 .filter { it.activityId == activityId }
                 .map { it.userId }
                 .toSet()
-            users.filter { it.id !in assignedIds }
+
+            // 2) How many are assigned per profession (for THIS activity)?
+            val assignedByRole: Map<Profession, Int> =
+                assignments.asSequence()
+                    .filter { it.activityId == activityId }
+                    .groupBy { it.role }
+                    .mapValues { (_, list) -> list.size }
+
+            // 3) Which professions are STILL NEEDED? (required - assigned > 0)
+            val neededProfs: Set<Profession> =
+                requiredRoles.asSequence()
+                    .filter { it.profession != Profession.Unknown }
+                    .filter { req -> (req.requiredCount - (assignedByRole[req.profession] ?: 0)) > 0 }
+                    .map { it.profession }
+                    .toSet()
+
+            // 4) Final filter:
+            //    - user not already assigned
+            //    - and (can fill any role OR has at least one of the needed professions)
+            users.filter { u ->
+                u.id !in assignedIds &&
+                        (
+                                neededProfs.isEmpty() || // if nothing is needed, you'll get an empty list (can change if desired)
+                                        u.canFillAnyRole ||
+                                        (profMap[u.id]?.any { it in neededProfs } == true)
+                                )
+            }
         }
+
+    private val userProfessionsAllFlow: Flow<Map<String, Set<Profession>>> =
+        usersFlow.flatMapLatest { users ->
+            if (users.isEmpty()) {
+                flowOf(emptyMap())
+            } else {
+                combine(
+                    users.map { u ->
+                        userProfessionsFlow(u.id).map { profs -> u.id to profs }
+                    }
+                ) { pairs -> pairs.toMap() }
+            }
+        }.shareIn(viewModelScope, started = SharingStarted.WhileSubscribed(5_000), replay = 1)
+
+
+
+
+
 
 
     // Legacy helpers (you can keep them if other screens use them, but
