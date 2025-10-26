@@ -6,7 +6,6 @@ import com.example.mycontrolapp.R
 enum class Profession(@StringRes val labelRes: Int) {
     Yanir(R.string.prof_yanir),
     Kitchen(R.string.prof_kitchen),
-    // Keep the enum name "Solider" if existing data depends on it
     Solider(R.string.prof_soldier),
     Officer(R.string.prof_officer),
     Negev(R.string.prof_negev),

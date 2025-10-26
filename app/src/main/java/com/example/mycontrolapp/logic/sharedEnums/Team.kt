@@ -8,7 +8,7 @@ enum class Team(@StringRes val labelRes: Int) {
     RETK(R.string.prof_yanir),
     CommandPost(R.string.prof_yanir),
     YANIR(R.string.prof_yanir),
-    Unknown(R.string.prof_yanir)
+    Unknown(R.string.unknown_user)
 }
 
 

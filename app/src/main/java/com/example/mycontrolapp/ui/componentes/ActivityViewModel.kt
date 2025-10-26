@@ -7,6 +7,7 @@ import com.example.mycontrolapp.logic.Assignment
 import com.example.mycontrolapp.logic.ListManager
 import com.example.mycontrolapp.logic.User
 import com.example.mycontrolapp.logic.sharedEnums.Profession
+import com.example.mycontrolapp.logic.sharedEnums.Team
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,6 +43,15 @@ class ActivityViewModel @Inject constructor(
     private val _selectedUserId = MutableStateFlow<String?>(null)
     val selectedUserId: StateFlow<String?> = _selectedUserId.asStateFlow()
     fun setSelectedUser(userId: String?) { _selectedUserId.value = userId }
+
+    private val _selectedTeam = MutableStateFlow<Team?>(Team.Unknown)
+
+    val selectedTeam: StateFlow<Team?> = _selectedTeam.asStateFlow()
+
+    fun setSelectedTeam(team: Team) { _selectedTeam.value = team }
+
+
+
 
     /* ---------------------------- Source flows ---------------------------- */
 
@@ -239,9 +249,6 @@ class ActivityViewModel @Inject constructor(
 
 
 
-
-    // Legacy helpers (you can keep them if other screens use them, but
-    // DO NOT collect them per-row in lists anymore).
     fun requiredCountForActivity(activityId: String) =
         roleRequirementsFlow(activityId).map { reqs -> reqs.sumOf { it.requiredCount } }
 

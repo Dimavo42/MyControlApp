@@ -39,6 +39,18 @@
     <string name="common_clear">נקה</string>
     <string name="unknown_user">(משתמש לא ידוע)</string>
 
+
+    <string name="team_division_1">מחלקה 1</string>
+    <string name="team_division_2">מחלקה 2</string>
+    <string name="team_division_3">מחלקה 3</string>
+    <string name="team_retek">רתק </string>
+    <string name="team_command_post">חפ"ק</string>
+    <string name="team_yanir">יניר</string>
+    <string name="team_choose">תבחר מחלקה</string>
+
+
+
+
     <!-- Assignment screen -->
     <string name="assignment_not_found">הפעילות לא נמצאה.</string>
     <string name="assignment_title">שיבוץ</string>

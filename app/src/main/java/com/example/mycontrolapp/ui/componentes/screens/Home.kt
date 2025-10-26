@@ -50,7 +50,7 @@ fun HomeScreen(
                 eventsByDate = eventsByDateFiltered,              // filtered calendar data
                 onDeleteActivity = { actId -> viewModel.removeActivity(actId) },
                 modifier = Modifier.fillMaxWidth(),
-                viewModel = viewModel                             // pass same VM (uses activityCountersFlow inside)
+                viewModel = viewModel                             // pass same VM
             )
         }
 

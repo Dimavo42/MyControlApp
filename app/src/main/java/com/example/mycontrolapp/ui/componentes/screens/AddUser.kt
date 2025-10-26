@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
 import com.example.mycontrolapp.R
+import com.example.mycontrolapp.logic.sharedEnums.Team
 
 private enum class UserEditorMode { Add, Edit }
 
@@ -55,6 +56,14 @@ fun AddUser(
     var lastName by rememberSaveable { mutableStateOf("") }
     var preferences by rememberSaveable { mutableStateOf("") }
     var canFillAnyRole by rememberSaveable { mutableStateOf(false) }
+
+    // Team fields
+    val allTeams = remember { Team.entries.filter { it != Team.Unknown } }
+    var teamMenuExpanded by remember { mutableStateOf(false) }
+    var selectedTeamName by rememberSaveable { mutableStateOf<String?>(null) }
+    val selectedTeam: Team? = remember(selectedTeamName) {
+        selectedTeamName?.let { nm -> Team.entries.firstOrNull { it.name == nm } }
+    }
 
     // Professions (multi)
     val allProfessions = remember { Profession.entries.filter { it != Profession.Unknown } }
@@ -103,10 +112,12 @@ fun AddUser(
             lastName = parts.drop(1).joinToString(" ")
             preferences = selectedUser.skills.joinToString(", ")
             canFillAnyRole = selectedUser.canFillAnyRole
+            selectedTeamName = selectedUser.team?.name
         } else if (mode == UserEditorMode.Add) {
             firstName = ""; lastName = ""; preferences = ""; canFillAnyRole = false
             selectedUserId = null
             selectedProfNames = emptySet()
+            selectedTeamName = null
         }
     }
 
@@ -120,9 +131,12 @@ fun AddUser(
     val isFormValid = firstName.isNotBlank() && lastName.isNotBlank()
     val fieldsEnabled = mode == UserEditorMode.Add || (mode == UserEditorMode.Edit && selectedUser != null)
 
-    // Close professions menu if fields become disabled
+    // Close menus if fields become disabled
     LaunchedEffect(fieldsEnabled) {
-        if (!fieldsEnabled) professionsMenuExpanded = false
+        if (!fieldsEnabled) {
+            professionsMenuExpanded = false
+            teamMenuExpanded = false
+        }
     }
 
     LazyColumn(
@@ -220,6 +234,52 @@ fun AddUser(
             )
         }
 
+        // ---------- TEAM DROPDOWN (fixed & complete) ----------
+        item {
+            ExposedDropdownMenuBox(
+                expanded = teamMenuExpanded,
+                onExpandedChange = {
+                    if (fieldsEnabled) teamMenuExpanded = !teamMenuExpanded
+                }
+            ) {
+                val teamDisplay = selectedTeam?.name
+                    ?: stringResource(R.string.none_label)
+                TextField(
+                    value = teamDisplay,
+                    onValueChange = {},
+                    readOnly = true,
+                    enabled = fieldsEnabled,
+                    label = { Text(stringResource(R.string.team_choose)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = teamMenuExpanded) },
+                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = teamMenuExpanded && fieldsEnabled,
+                    onDismissRequest = { teamMenuExpanded = false }
+                ) {
+                    // "None" option clears team
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.none_label)) },
+                        onClick = {
+                            selectedTeamName = null
+                            teamMenuExpanded = false
+                        }
+                    )
+                    // Actual teams (excluding Unknown)
+                    allTeams.forEach { t ->
+                        DropdownMenuItem(
+                            text = { Text(t.name) },
+                            onClick = {
+                                selectedTeamName = t.name
+                                teamMenuExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+        // ------------------------------------------------------
+
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -237,7 +297,6 @@ fun AddUser(
         item { Text(text = stringResource(R.string.label_professions_multi), style = MaterialTheme.typography.labelLarge) }
 
         item {
-            // ⬇⬇⬇ Changed: build display from localized labels
             val display = selectedProfessions
                 .map { stringResource(it.labelRes) }
                 .sorted()
@@ -262,7 +321,6 @@ fun AddUser(
                     expanded = professionsMenuExpanded && fieldsEnabled,
                     onDismissRequest = { professionsMenuExpanded = false }
                 ) {
-                    // Quick actions
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.action_select_all)) },
                         onClick = { selectAll() }
@@ -272,7 +330,6 @@ fun AddUser(
                         onClick = { clearAll(); canFillAnyRole = false }
                     )
                     Divider()
-                    // Actual roles
                     allProfessions.forEach { prof ->
                         val selected = prof.name in selectedProfNames
                         DropdownMenuItem(
@@ -283,7 +340,6 @@ fun AddUser(
                                         onCheckedChange = { _ -> toggleProfession(prof) },
                                         enabled = fieldsEnabled
                                     )
-                                    // ⬇⬇⬇ Changed: localized label
                                     Text(stringResource(prof.labelRes))
                                 }
                             },
@@ -309,18 +365,19 @@ fun AddUser(
                         Button(
                             enabled = isFormValid,
                             onClick = {
-                                val skills = preferences.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+                                val skills = preferences.split(',')
+                                    .map { it.trim() }
+                                    .filter { it.isNotEmpty() }
                                 val newUser = User(
                                     name = "${firstName.trim()} ${lastName.trim()}",
                                     skills = skills,
                                     isActive = true,
-                                    canFillAnyRole = canFillAnyRole
+                                    canFillAnyRole = canFillAnyRole,
+                                    team = selectedTeam                     // ⬅️ save team
                                 )
                                 viewModel.insertUser(newUser)
-
                                 val setToSave = if (canFillAnyRole) emptySet() else selectedProfessions
                                 viewModel.replaceUserProfessions(newUser.id, setToSave)
-
                                 navController.navigateUp()
                             }
                         ) { Text(stringResource(R.string.action_accept)) }
@@ -329,12 +386,15 @@ fun AddUser(
                         Button(
                             enabled = fieldsEnabled && isFormValid && selectedUser != null,
                             onClick = {
-                                val skills = preferences.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+                                val skills = preferences.split(',')
+                                    .map { it.trim() }
+                                    .filter { it.isNotEmpty() }
                                 val current = selectedUser ?: return@Button
                                 val updated = current.copy(
                                     name = "${firstName.trim()} ${lastName.trim()}",
                                     skills = skills,
-                                    canFillAnyRole = canFillAnyRole
+                                    canFillAnyRole = canFillAnyRole,
+                                    team = selectedTeam                  // ⬅️ save team
                                 )
                                 viewModel.updateUser(updated)
                                 val setToSave = if (canFillAnyRole) emptySet() else selectedProfessions
@@ -358,6 +418,7 @@ fun AddUser(
                                 preferences = ""
                                 canFillAnyRole = false
                                 selectedProfNames = emptySet()
+                                selectedTeamName = null
                             }
                         ) { Text(stringResource(R.string.action_delete)) }
                     }
@@ -368,6 +429,7 @@ fun AddUser(
                             preferences = ""
                             canFillAnyRole = false
                             selectedProfNames = emptySet()
+                            selectedTeamName = null
                             if (mode == UserEditorMode.Edit) selectedUserId = null
                         }
                     ) { Text(stringResource(R.string.action_reset)) }
