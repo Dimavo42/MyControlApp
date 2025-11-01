@@ -159,6 +159,9 @@
 
     <string name="label_toggle_filter_by_user">סנו על פי משתמש</string>
 
+    <string name="no_users_available">אין משתמשים קיימים</string>
+    <string name="select_user">תבחר משתמש</string>
+
 
 
 </resources>

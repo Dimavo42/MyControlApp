@@ -34,12 +34,10 @@ fun DateFilterWithShow(
 
     var selectedUserId by rememberSaveable { mutableStateOf<String?>(null) }
     val selectedUser: User? = remember(users, selectedUserId) { users.firstOrNull { it.id == selectedUserId } }
-    val committedLabel = selectedUser?.name ?: stringResource(R.string.filter_all_users)
-    var userQuery by rememberSaveable { mutableStateOf(committedLabel) }
 
     var calendarYm by rememberSaveable { mutableStateOf(nowYm) }
 
-    // Team state (always visible)
+    // Team state (always visible, save-safe)
     val teamSaver = Saver<Team, String>(
         save = { it.name },
         restore = { name -> Team.entries.firstOrNull { it.name == name } ?: Team.Unknown }
@@ -47,7 +45,7 @@ fun DateFilterWithShow(
     var selectedTeam by rememberSaveable(stateSaver = teamSaver) { mutableStateOf(Team.Unknown) }
     var teamMenuExpanded by rememberSaveable { mutableStateOf(false) }
 
-    // NEW: toggle – when true → show User filter; team stays visible regardless
+    // Toggle: when true → show User dropdown; Team stays visible regardless
     var filterByUser by rememberSaveable { mutableStateOf(false) }
 
     val years = remember {
@@ -58,12 +56,18 @@ fun DateFilterWithShow(
 
     val monthLabels = stringArrayResource(id = R.array.month_names)
 
-    fun exactMatch(q: String): User? =
-        users.firstOrNull { it.name.equals(q, ignoreCase = true) }
+    // Users to show in User dropdown (filtered by team unless Unknown)
+    val pickerUsers = remember(users, selectedTeam) {
+        if (selectedTeam == Team.Unknown) users
+        else users.filter { it.team == selectedTeam } // assumes: data class User(val team: Team, ...)
+    }
 
-    fun singlePartialMatch(q: String): User? {
-        val matches = users.filter { it.name.contains(q, ignoreCase = true) }
-        return matches.singleOrNull()
+    // If team changes and current user no longer fits, clear selection
+    LaunchedEffect(selectedTeam, filterByUser, pickerUsers) {
+        if (filterByUser && selectedUserId != null && pickerUsers.none { it.id == selectedUserId }) {
+            selectedUserId = null
+            userMenuExpanded = false
+        }
     }
 
     Column(
@@ -81,7 +85,7 @@ fun DateFilterWithShow(
                 .testTag("teamFilterRow")
         ) {
             OutlinedTextField(
-                value = stringResource(selectedTeam.labelRes),   // or selectedTeam.name while testing
+                value = stringResource(selectedTeam.labelRes),  // or selectedTeam.name for testing
                 label = { Text(stringResource(R.string.label_filter_by_team)) },
                 onValueChange = {},
                 readOnly = true,
@@ -108,7 +112,7 @@ fun DateFilterWithShow(
             }
         }
 
-        // ----- Toggle row (decides if User filter is shown) -----
+        // ----- Toggle row (decides if User dropdown is shown) -----
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -121,9 +125,8 @@ fun DateFilterWithShow(
                 onCheckedChange = { on ->
                     filterByUser = on
                     if (!on) {
-                        // optional cleanup when hiding user filter
+                        // cleanup when hiding user filter
                         selectedUserId = null
-                        userQuery = ctx.getString(R.string.filter_all_users)
                         userMenuExpanded = false
                     }
                 },
@@ -131,27 +134,22 @@ fun DateFilterWithShow(
             )
         }
 
-        // ----- User filter (conditionally visible) -----
+        // ----- User dropdown (no typing; single-select; filtered by team) -----
         if (filterByUser) {
             ExposedDropdownMenuBox(
                 expanded = userMenuExpanded,
-                onExpandedChange = { /* open via chevron only */ },
+                onExpandedChange = { userMenuExpanded = !userMenuExpanded },
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("userFilterRow")
             ) {
                 OutlinedTextField(
-                    value = userQuery,
-                    onValueChange = { userQuery = it },
-                    enabled = users.isNotEmpty(),
+                    value = selectedUser?.name ?: stringResource(R.string.select_user), // show current or "Select user"
+                    onValueChange = {},                         // no typing
+                    readOnly = true,                            // dropdown only
+                    enabled = pickerUsers.isNotEmpty(),
                     label = { Text(stringResource(R.string.label_filter_by_user)) },
-                    singleLine = true,
-                    trailingIcon = {
-                        IconButton(
-                            onClick = { if (users.isNotEmpty()) userMenuExpanded = !userMenuExpanded },
-                            enabled = users.isNotEmpty()
-                        ) { ExposedDropdownMenuDefaults.TrailingIcon(expanded = userMenuExpanded) }
-                    },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = userMenuExpanded) },
                     modifier = Modifier
                         .menuAnchor()
                         .fillMaxWidth()
@@ -162,24 +160,20 @@ fun DateFilterWithShow(
                     expanded = userMenuExpanded,
                     onDismissRequest = { userMenuExpanded = false }
                 ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.filter_all_users)) },
-                        onClick = {
-                            selectedUserId = null
-                            userQuery = ctx.getString(R.string.filter_all_users)
-                            userMenuExpanded = false
-                        },
-                        modifier = Modifier.testTag("user_all")
-                    )
-                    users.forEach { u ->
+                    pickerUsers.forEach { u ->
                         DropdownMenuItem(
                             text = { Text(u.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             onClick = {
                                 selectedUserId = u.id
-                                userQuery = u.name
                                 userMenuExpanded = false
                             },
                             modifier = Modifier.testTag("user_${u.id}")
+                        )
+                    }
+                    if (pickerUsers.isEmpty()) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.no_users_available)) },
+                            onClick = { /* no-op */ }
                         )
                     }
                 }
@@ -244,40 +238,13 @@ fun DateFilterWithShow(
             // Show
             Button(
                 onClick = {
-                    // Month/year
                     val ym = YearMonth.of(selectedYear, selectedMonth)
                     calendarYm = ym
 
                     // Effective user only if toggle is ON
-                    var effectiveUser: User? = null
-                    if (filterByUser) {
-                        val q = userQuery.trim()
-                        val kwAll = ctx.getString(R.string.keyword_all)
-                        val kwAllUsers = ctx.getString(R.string.keyword_all_users)
-                        val allUsers = ctx.getString(R.string.filter_all_users)
+                    val effectiveUser: User? = if (filterByUser) selectedUser else null
 
-                        when {
-                            q.equals(kwAll, true) || q.equals(kwAllUsers, true) || q.equals(allUsers, true) -> {
-                                selectedUserId = null
-                                userQuery = allUsers
-                                effectiveUser = null
-                            }
-                            q.isNotEmpty() -> {
-                                val exact = exactMatch(q)
-                                val unique = exact ?: singlePartialMatch(q)
-                                if (unique != null) {
-                                    selectedUserId = unique.id
-                                    userQuery = unique.name
-                                    effectiveUser = unique
-                                } else {
-                                    userQuery = committedLabel
-                                }
-                            }
-                            else -> userQuery = committedLabel
-                        }
-                    }
-
-                    // Team always passed; Team.Unknown means "no team filter"
+                    // Team is always passed; Team.Unknown = "no team filter"
                     onShow(ym, effectiveUser, selectedTeam)
                 },
                 modifier = Modifier.weight(1f).testTag("btnShow")
