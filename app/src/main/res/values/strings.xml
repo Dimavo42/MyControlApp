@@ -37,6 +37,7 @@
 
     <string name="common_back">Back</string>
     <string name="common_clear">Clear</string>
+    <string name="common_assgin">Auto assign</string>
     <string name="unknown_user">(Unknown user)</string>
 
     <string name="team_division_1">Division 1</string>

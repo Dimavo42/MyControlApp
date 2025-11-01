@@ -376,6 +376,13 @@ fun AssignmentScreen(
                             .semantics { contentDescription = "resourceId:btnBack" }
                     ) { Text(stringResource(R.string.common_back)) }
                 }
+
+                OutlinedButton(
+                    onClick = { /* optional local reset */ },
+                    modifier = Modifier
+                        .testTag("btnClearSelections")
+                        .semantics { contentDescription = "resourceId:btnClearSelections" }
+                ) { Text(stringResource(R.string.common_assgin)) }
             }
         }
     }
