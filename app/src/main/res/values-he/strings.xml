@@ -144,4 +144,17 @@
     <string name="prof_grenade_launcher">מטוליסט</string>
     <string name="prof_driver">נהג</string>
     <string name="prof_unknown">לא ידוע</string>
+
+    <string name="label_filter_by_team">סנן על פי מחלקה</string>
+
+
+    <string name="team_Division_1">מחלקה 1</string>
+    <string name="team_Division_2">מחלקה 2</string>
+    <string name="team_Division_3">מחלקה 3</string>
+    <string name="team_RETK">רתק</string>
+    <string name="team_CommandPost">חפ"'ק</string>
+    <string name="team_YANIR">צוות יניר </string>
+    <string name="team_Unknown">כל המחלקות או מחלקה לא ידוע </string>
+
+    <string name="label_toggle_filter_by_user">סנו על פי משתמש</string>
 </resources>

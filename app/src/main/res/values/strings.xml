@@ -146,4 +146,24 @@
     <string name="prof_grenade_launcher">Grenade Launcher</string>
     <string name="prof_driver">Driver</string>
     <string name="prof_unknown">Unknown</string>
+
+
+    <string name="team_Division_1">Division 1</string>
+    <string name="team_Division_2">Division 2</string>
+    <string name="team_Division_3">Division 3</string>
+    <string name="team_RETK">RETK</string>
+    <string name="team_CommandPost">Command Post</string>
+    <string name="team_YANIR">YANIR </string>
+    <string name="team_Unknown">Unknown Team // All Team </string>
+
+
+
+
+
+    <string name="label_toggle_filter_by_user">Filter by user</string>
+
+
+    <string name="label_filter_by_team">Filter by team</string>
+
+
 </resources>

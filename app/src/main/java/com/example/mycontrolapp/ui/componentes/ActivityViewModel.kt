@@ -74,7 +74,7 @@ class ActivityViewModel @Inject constructor(
 
     data class ActivityWithUsers(val activity: Activity, val users: List<User>)
 
-    val activitiesWithUsersFlow: StateFlow<List<ActivityWithUsers>> =
+    private val activitiesWithUsersFlow: StateFlow<List<ActivityWithUsers>> =
         combine(activitiesFlow, usersFlow, assignmentsFlow) { activities, users, assignments ->
             val usersById = users.associateBy { it.id }
             val userIdsByActivity = assignments.groupBy { it.activityId }
@@ -87,12 +87,26 @@ class ActivityViewModel @Inject constructor(
         }.stateIn(viewModelScope, sharing, emptyList())
 
     val activitiesWithUsersFilteredFlow: StateFlow<List<ActivityWithUsers>> =
-        combine(activitiesWithUsersFlow, selectedYearMonth, selectedUserId) { list, ym, userId ->
+        combine(
+            activitiesWithUsersFlow,
+            selectedYearMonth,      // Flow<YearMonth>
+            selectedUserId,         // Flow<String?>
+            selectedTeam            // Flow<Team>
+        ) { list, ym, userId, team ->
             list.asSequence()
+                .map { awu ->
+                    val filteredUsers = awu.users.filter { u ->
+                        (team == Team.Unknown || u.team == team) &&
+                                (userId == null || u.id == userId)
+                    }
+                    awu.copy(users = filteredUsers)
+                }
                 .filter { awu ->
                     val inMonth = awu.activity.inYearMonth(ym)
-                    val matchesUser = userId == null || awu.users.any { it.id == userId }
-                    inMonth && matchesUser
+                    val noUserFilter = userId == null
+                    val noTeamFilter = team == Team.Unknown
+                    val anyUserMatches = awu.users.isNotEmpty()
+                    inMonth && ( (noUserFilter && noTeamFilter) || anyUserMatches )
                 }
                 .sortedBy { it.activity.startAt }
                 .toList()

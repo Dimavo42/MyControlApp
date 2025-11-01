@@ -18,6 +18,7 @@ import com.example.mycontrolapp.ui.componentes.ActivityViewModel
 import com.example.mycontrolapp.ui.componentes.DateFilterWithShow
 import java.time.YearMonth
 import com.example.mycontrolapp.R
+import com.example.mycontrolapp.logic.sharedEnums.Team
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -53,15 +54,15 @@ fun SavedActivities(
             modifier = modifier
                 .fillMaxSize()
                 .padding(padding),
-            onShow = { ym: YearMonth, userOrNull ->
+            onShow = { ym: YearMonth, userOrNull,selectedTeam ->
                 viewModel.setSelectedYearMonth(ym)
                 viewModel.setSelectedUser(userOrNull?.id) // null => All users
+                viewModel.setSelectedTeam(selectedTeam ?: Team.Unknown )
             }
         ) { displayedYm, _ ->
             val context = LocalContext.current
             val locale = remember { context.resources.configuration.locales[0] ?: Locale.getDefault() }
             val monthYearLabel = remember(displayedYm, locale) {
-                // Localized full month name + year (e.g., "October 2025" / "אוקטובר 2025")
                 displayedYm.atDay(1).format(DateTimeFormatter.ofPattern("LLLL yyyy", locale))
             }
 
