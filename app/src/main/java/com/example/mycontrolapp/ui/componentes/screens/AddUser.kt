@@ -31,8 +31,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
 import com.example.mycontrolapp.R
 import com.example.mycontrolapp.logic.sharedEnums.Team
-
-private enum class UserEditorMode { Add, Edit }
+import com.example.mycontrolapp.logic.sharedEnums.UserEditorMode
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -402,6 +401,7 @@ fun AddUser(
                             }
                         ) { Text(stringResource(R.string.action_save_changes)) }
                     }
+                    else -> {}
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

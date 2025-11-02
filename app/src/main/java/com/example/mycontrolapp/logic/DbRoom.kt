@@ -65,7 +65,8 @@ data class Activity(
     val name: String,
     @ColumnInfo(name = "start_at") val startAt: Long,
     @ColumnInfo(name = "end_at")   val endAt: Long,
-    @ColumnInfo(name = "date_epoch_day") val dateEpochDay: Int
+    @ColumnInfo(name = "date_epoch_day") val dateEpochDay: Int,
+    @ColumnInfo(name = "team") val team: Team? = null
 ) {
     init { require(endAt >= startAt) { "endAt must be >= startAt" } }
 

@@ -5,6 +5,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -31,14 +34,16 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import com.example.mycontrolapp.R
+import com.example.mycontrolapp.logic.sharedEnums.Team
+import com.example.mycontrolapp.logic.sharedEnums.UserEditorMode
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AssignmentScreen(
     navController: NavController,
     activityId: String,
     viewModel: ActivityViewModel = hiltViewModel()
 ) {
-    // Load the activity
     val activities by viewModel.activitiesFlow.collectAsState(initial = emptyList())
     val activity = remember(activities, activityId) { activities.firstOrNull { it.id == activityId } }
 
@@ -75,7 +80,7 @@ fun AssignmentScreen(
         viewModel.assignmentsFlow.map { list -> list.filter { it.activityId == activityId } }
     }.collectAsState(initial = emptyList())
 
-    // REQUIRED roles (from Add Activity screen), excluding Unknown and zero-count
+    // REQUIRED roles
     val requirementsRaw by remember(activityId) {
         viewModel.roleRequirementsFlow(activityId)
     }.collectAsState(initial = emptyList())
@@ -87,8 +92,11 @@ fun AssignmentScreen(
     }
 
     /* --------------------- Activity edit state --------------------- */
-    var useEdit by remember { mutableStateOf(false) }
+    var mode by rememberSaveable { mutableStateOf(UserEditorMode.Fill) }
+
     var name by remember(activity.id) { mutableStateOf(activity.name) }
+    var team by remember(activity.id) { mutableStateOf(activity.team) } // Team? (null = All users)
+    var teamMenuExpanded by rememberSaveable { mutableStateOf(false) }
 
     val zone = remember { ZoneId.systemDefault() }
     val initialLocalDate: LocalDate = LocalDate.ofEpochDay(activity.dateEpochDay.toLong())
@@ -115,8 +123,10 @@ fun AssignmentScreen(
             )
         )
     }
+
     val canSave =
-        useEdit && name.isNotBlank() &&
+        (mode == UserEditorMode.Edit) &&
+                name.isNotBlank() &&
                 computed.isDateValid && computed.isStartValid && computed.isEndValid && computed.endAfterStart
 
     /* --------------------- Needed seats (requirements - assigned) --------------------- */
@@ -135,10 +145,14 @@ fun AssignmentScreen(
         }
     }
 
-    // --- Options per role ---
+    // --- Options per role (respect team rule) ---
     @Composable
-    fun optionsFor(profession: Profession): List<User> {
-        return unassignedUsers
+    fun optionsFor(@Suppress("UNUSED_PARAMETER") profession: Profession): List<User> {
+        return if (team == null) {
+            unassignedUsers // open activity → all users
+        } else {
+            unassignedUsers.filter { it.team == team } // restricted to chosen team
+        }
     }
 
     // For each "need" seat, keep a local selection until you click Assign
@@ -165,25 +179,34 @@ fun AssignmentScreen(
             )
         }
 
-        // Edit switch
+        // ---- Mode Tabs: Fill / Edit ----
         item {
-            Row(
-                Modifier
+            TabRow(
+                selectedTabIndex = when (mode) {
+                    UserEditorMode.Fill -> 0
+                    UserEditorMode.Edit -> 1
+                    UserEditorMode.Add ->  2
+                },
+                modifier = Modifier
                     .fillMaxWidth()
-                    .testTag("rowEditSwitch")
-                    .semantics { contentDescription = "resourceId:rowEditSwitch" },
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .testTag("tabRowEditMode")
+                    .semantics { contentDescription = "resourceId:tabRowEditMode" }
             ) {
-                Text(
-                    if (useEdit) stringResource(R.string.editing_enabled)
-                    else stringResource(R.string.editing_disabled)
-                )
-                Switch(
-                    checked = useEdit,
-                    onCheckedChange = { useEdit = it },
+                Tab(
+                    selected = mode == UserEditorMode.Fill,
+                    onClick = { mode = UserEditorMode.Fill },
                     modifier = Modifier
-                        .testTag("switchEditMode")
-                        .semantics { contentDescription = "resourceId:switchEditMode" }
+                        .testTag("tabFill")
+                        .semantics { contentDescription = "resourceId:tabFill" },
+                    text = { Text("Fill") }
+                )
+                Tab(
+                    selected = mode == UserEditorMode.Edit,
+                    onClick = { mode = UserEditorMode.Edit },
+                    modifier = Modifier
+                        .testTag("tabEdit")
+                        .semantics { contentDescription = "resourceId:tabEdit" },
+                    text = { Text("Edit") }
                 )
             }
         }
@@ -194,13 +217,81 @@ fun AssignmentScreen(
                 value = name,
                 onValueChange = { name = it },
                 label = { Text(stringResource(R.string.label_activity_name)) },
-                enabled = useEdit,
+                enabled = (mode == UserEditorMode.Edit),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("txtActivityName")
                     .semantics { contentDescription = "resourceId:txtActivityName" }
             )
+        }
+
+        // Team: dropdown in Edit, read-only in Fill
+        item {
+            if (mode == UserEditorMode.Edit) {
+                val valueLabel = team?.let { t ->
+                    // If you have labelRes on Team, prefer stringResource(t.labelRes)
+                    t.name
+                } ?: "All users"
+
+                ExposedDropdownMenuBox(
+                    expanded = teamMenuExpanded,
+                    onExpandedChange = { teamMenuExpanded = !teamMenuExpanded },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("boxActivityTeam")
+                        .semantics { contentDescription = "resourceId:boxActivityTeam" }
+                ) {
+                    OutlinedTextField(
+                        value = valueLabel,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Team") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = teamMenuExpanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                            .testTag("txtActivityTeamEdit")
+                            .semantics { contentDescription = "resourceId:txtActivityTeamEdit" }
+                    )
+                    DropdownMenu(
+                        expanded = teamMenuExpanded,
+                        onDismissRequest = { teamMenuExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("All users") },
+                            onClick = {
+                                team = null
+                                teamMenuExpanded = false
+                            }
+                        )
+                        Team.entries
+                            .filter { it != Team.Unknown }
+                            .forEach { t ->
+                                DropdownMenuItem(
+                                    text = { Text(t.name) }, // or stringResource(t.labelRes)
+                                    onClick = {
+                                        team = t
+                                        teamMenuExpanded = false
+                                    }
+                                )
+                            }
+                    }
+                }
+            } else {
+                val teamText = team?.name ?: "All users"
+                OutlinedTextField(
+                    value = teamText,
+                    onValueChange = {},
+                    enabled = false,
+                    readOnly = true,
+                    label = { Text("Team") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("txtActivityTeam")
+                        .semantics { contentDescription = "resourceId:txtActivityTeam" }
+                )
+            }
         }
 
         // Date/Time
@@ -212,7 +303,7 @@ fun AssignmentScreen(
                 onStartTimeTextChange = { startTimeText = it },
                 endTimeText = endTimeText,
                 onEndTimeTextChange = { endTimeText = it },
-                enabled = useEdit,
+                enabled = (mode == UserEditorMode.Edit),
                 showErrors = true,
                 onComputedChange = { computed = it },
                 modifier = Modifier
@@ -221,8 +312,9 @@ fun AssignmentScreen(
                     .semantics { contentDescription = "resourceId:timeWindow" }
             )
         }
-        // Save activity (edit fields)
-        if (useEdit) {
+
+        // Save activity (only in Edit mode)
+        if (mode == UserEditorMode.Edit) {
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Button(
@@ -232,10 +324,11 @@ fun AssignmentScreen(
                                 name = name.trim(),
                                 startAt = computed.startAtMillis!!,
                                 endAt = computed.endAtMillis!!,
-                                dateEpochDay = computed.dateEpochDay!!
+                                dateEpochDay = computed.dateEpochDay!!,
+                                team = team // ✅ persist selected team
                             )
                             viewModel.updateActivity(updated)
-                            useEdit = false
+                            mode = UserEditorMode.Fill
                         },
                         modifier = Modifier
                             .testTag("btnSaveActivity")
@@ -329,7 +422,6 @@ fun AssignmentScreen(
                 ) {
                     ListItem(
                         headlineContent = { Text(user?.name ?: stringResource(R.string.unknown_user)) },
-                        // ⬇ Localized profession label
                         supportingContent = { Text(stringResource(asg.role.labelRes)) },
                         trailingContent = {
                             TextButton(
@@ -341,26 +433,16 @@ fun AssignmentScreen(
             }
         }
 
-
-
         // ------------------ Bottom actions ------------------
         item {
             val allSeatsFilled = neededSeats.isEmpty()
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedButton(
-                    onClick = { /* optional local reset */ },
-                    modifier = Modifier
-                        .testTag("btnClearSelections")
-                        .semantics { contentDescription = "resourceId:btnClearSelections" }
-                ) { Text(stringResource(R.string.common_clear)) }
-
                 if (allSeatsFilled) {
-                    // Green filled Back when all roles/seats are filled
                     Button(
                         onClick = { navController.popBackStack() },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2E7D32),   // ✅ green
+                            containerColor = Color(0xFF2E7D32),
                             contentColor = Color.White
                         ),
                         modifier = Modifier
@@ -368,7 +450,6 @@ fun AssignmentScreen(
                             .semantics { contentDescription = "resourceId:btnBack" }
                     ) { Text(stringResource(R.string.common_back)) }
                 } else {
-                    // Default outlined Back otherwise
                     OutlinedButton(
                         onClick = { navController.popBackStack() },
                         modifier = Modifier
@@ -378,10 +459,10 @@ fun AssignmentScreen(
                 }
 
                 OutlinedButton(
-                    onClick = { /* optional local reset */ },
+                    onClick = { /* optional submit action for pending selections, if you add one */ },
                     modifier = Modifier
-                        .testTag("btnClearSelections")
-                        .semantics { contentDescription = "resourceId:btnClearSelections" }
+                        .testTag("btnAssign")
+                        .semantics { contentDescription = "resourceId:btnAssign" }
                 ) { Text(stringResource(R.string.common_assgin)) }
             }
         }

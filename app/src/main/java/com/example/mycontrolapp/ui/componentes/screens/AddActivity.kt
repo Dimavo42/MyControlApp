@@ -73,6 +73,8 @@ fun AddActivity(
     }
     val lifecycleOwner = LocalLifecycleOwner.current
 
+
+
     var attachTeamToActivity by rememberSaveable { mutableStateOf(false) }
 
     var computed by remember {
@@ -103,6 +105,9 @@ fun AddActivity(
         activityName.text.isNotBlank() &&
                 computed.isDateValid && computed.isStartValid && computed.isEndValid &&
                 computed.endAfterStart && candidates > minCandidates && assignCountOk
+
+    val teamToPersist: Team? =
+        if (attachTeamToActivity && selectedTeam != Team.Unknown) selectedTeam else null
 
     LazyColumn(
         modifier = modifier
@@ -230,7 +235,8 @@ fun AddActivity(
                                 name = activityName.text.trim(),
                                 startAt = requireNotNull(computed.startAtMillis),
                                 endAt = requireNotNull(computed.endAtMillis),
-                                dateEpochDay = requireNotNull(computed.dateEpochDay)
+                                dateEpochDay = requireNotNull(computed.dateEpochDay),
+                                team = teamToPersist
                             )
                             lifecycleOwner.lifecycleScope.launch {
                                 viewModel.insertActivityWithRequirements(
@@ -249,7 +255,8 @@ fun AddActivity(
                             name = activityName.text.trim(),
                             startAt = requireNotNull(computed.startAtMillis),
                             endAt = requireNotNull(computed.endAtMillis),
-                            dateEpochDay = requireNotNull(computed.dateEpochDay)
+                            dateEpochDay = requireNotNull(computed.dateEpochDay),
+                            team = teamToPersist
                         )
                         lifecycleOwner.lifecycleScope.launch {
                             viewModel.insertActivityWithRequirements(
@@ -272,6 +279,8 @@ fun AddActivity(
                         candidates = 0
                         selectedUsers = emptySet()
                         roles = emptyList()
+                        selectedTeam = Team.Unknown
+                        attachTeamToActivity = false
                     }
                 ) { Text(stringResource(R.string.action_reset)) }
             }
