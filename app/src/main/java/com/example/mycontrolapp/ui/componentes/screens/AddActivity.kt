@@ -11,7 +11,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
+import com.example.myapp.appNavigation.AppDestinations
 import com.example.mycontrolapp.logic.Activity
 import com.example.mycontrolapp.logic.User
 import com.example.mycontrolapp.logic.sharedEnums.Profession
@@ -23,6 +26,7 @@ import com.example.mycontrolapp.ui.componentes.custom.TimeWindowContainer
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import com.example.mycontrolapp.R
+import kotlinx.coroutines.launch
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,17 +56,17 @@ fun AddActivity(
 
     var candidates by rememberSaveable { mutableIntStateOf(0) }
 
-    // Keep roles sized to candidates
     var roles by rememberSaveable(candidates) {
-        mutableStateOf(List(candidates) { Profession.Unknown })
+        mutableStateOf(List(candidates) { Profession.Solider })
     }
     LaunchedEffect(candidates) {
         roles = when {
             candidates < roles.size -> roles.take(candidates)
-            candidates > roles.size -> roles + List(candidates - roles.size) { Profession.Unknown }
+            candidates > roles.size -> roles + List(candidates - roles.size) { Profession.Solider }
             else -> roles
         }
     }
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     var computed by remember {
         mutableStateOf(
@@ -78,7 +82,6 @@ fun AddActivity(
         )
     }
 
-    // You don't pick users here yet, but keep the logic intact
     var selectedUsers by remember { mutableStateOf<Set<User>>(emptySet()) }
     val assignCountOk = selectedUsers.size <= candidates
 
@@ -161,6 +164,25 @@ fun AddActivity(
                     .padding(top = 16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                if(formValid){
+                    Button(
+                        onClick = {
+                            val newActivity = Activity(
+                                name = activityName.text.trim(),
+                                startAt = requireNotNull(computed.startAtMillis),
+                                endAt = requireNotNull(computed.endAtMillis),
+                                dateEpochDay = requireNotNull(computed.dateEpochDay)
+                            )
+                            lifecycleOwner.lifecycleScope.launch {
+                                viewModel.insertActivityWithRequirements(
+                                    activity = newActivity,
+                                    roles = roles
+                                )
+                                navController.navigate("${AppDestinations.Assignment}/${newActivity.id}")
+                            }
+                        }
+                    ) { Text(stringResource(R.string.calendar_assign)) }
+                }
                 Button(
                     enabled = formValid,
                     onClick = {
@@ -170,12 +192,14 @@ fun AddActivity(
                             endAt = requireNotNull(computed.endAtMillis),
                             dateEpochDay = requireNotNull(computed.dateEpochDay)
                         )
-                        viewModel.insertActivityWithRequirements(
-                            activity = newActivity,
-                            roles = roles
-                        )
-                        navController.navigate("home") {
-                            popUpTo("home") { inclusive = true }
+                        lifecycleOwner.lifecycleScope.launch {
+                            viewModel.insertActivityWithRequirements(
+                                activity = newActivity,
+                                roles = roles
+                            )
+                            navController.navigate("home") {
+                                popUpTo("home") { inclusive = true }
+                            }
                         }
                     }
                 ) { Text(stringResource(R.string.action_accept)) }

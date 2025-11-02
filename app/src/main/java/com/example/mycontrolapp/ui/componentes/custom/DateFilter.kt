@@ -25,7 +25,6 @@ fun DateFilterWithShow(
     content: @Composable (displayedYearMonth: YearMonth, selectedUser: User?) -> Unit
 ) {
     val nowYm = YearMonth.now()
-    val ctx = LocalContext.current
 
     var monthMenu by rememberSaveable { mutableStateOf(false) }
     var yearMenu by rememberSaveable { mutableStateOf(false) }

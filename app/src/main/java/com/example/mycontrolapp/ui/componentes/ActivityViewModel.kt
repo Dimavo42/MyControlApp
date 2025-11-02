@@ -9,6 +9,7 @@ import com.example.mycontrolapp.logic.User
 import com.example.mycontrolapp.logic.sharedEnums.Profession
 import com.example.mycontrolapp.logic.sharedEnums.Team
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
@@ -154,10 +156,10 @@ class ActivityViewModel @Inject constructor(
     fun updateUser(u: User) = viewModelScope.launch { listManager.updateUser(u) }
     fun removeUser(id: String) = viewModelScope.launch { listManager.removeUser(id) }
 
-    fun insertActivityWithRequirements(
+    suspend  fun insertActivityWithRequirements(
         activity: Activity,
         roles: List<Profession>
-    ) = viewModelScope.launch {
+    ) : String = withContext(Dispatchers.IO) {
         listManager.addActivity(activity)
 
         val counts: Map<Profession, Int> =
@@ -176,6 +178,7 @@ class ActivityViewModel @Inject constructor(
         if (reqs.isNotEmpty()) {
             listManager.upsertAllRequirements(reqs)
         }
+        activity.id
     }
 
     fun assignUser(activityId: String, userId: String, profession: Profession) = viewModelScope.launch {
