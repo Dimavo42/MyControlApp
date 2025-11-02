@@ -101,14 +101,17 @@
     <string name="keyword_all">הכל</string>
     <string name="keyword_all_users">כל המשתמשים</string>
 
-    <string name="candidates_input_mode">קלט מועמדים: %1$s</string>
+    <string name="candidates_input_mode">מספר מקצועות לשייך: %1$s</string>
     <string name="mode_slider">מחוון</string>
     <string name="mode_text">טקסט</string>
-    <string name="select_number_of_candidates">בחר מספר מועמדים</string>
+    <string name="select_number_of_candidates">בחר מספר מקצועות לפעילות</string>
     <string name="selected_n">נבחר: %1$d</string>
     <string name="number_of_candidates_range">מספר מועמדים (%1$d..%2$d)</string>
 
-    <string name="create_activity_title">יצירת פעילות</string>
+
+    <string name="add_activity_attach_team">שייך מחלקה למשימה</string>
+
+    <string name="create_activity_title">יצירת פעילות חדשה</string>
     <string name="error_selected_users_exceeds">בחרת %1$d משתמשים אך מספר המועמדים המותר הוא %2$d.</string>
 
     <string name="dialog_select_item">בחר פריט</string>
@@ -162,6 +165,8 @@
     <string name="no_users_available">אין משתמשים קיימים</string>
     <string name="select_user">תבחר משתמש</string>
     <string name="common_assgin">שיבוץ אוטומטי</string>
+    <string name="select_team">תבחר מחלקה</string>
+
 
 
 

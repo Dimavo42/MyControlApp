@@ -3,9 +3,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
+import androidx.compose.material3.ExposedDropdownMenuDefaults.TrailingIcon
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
@@ -26,6 +30,7 @@ import com.example.mycontrolapp.ui.componentes.custom.TimeWindowContainer
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import com.example.mycontrolapp.R
+import com.example.mycontrolapp.logic.sharedEnums.Team
 import kotlinx.coroutines.launch
 
 
@@ -68,6 +73,8 @@ fun AddActivity(
     }
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    var attachTeamToActivity by rememberSaveable { mutableStateOf(false) }
+
     var computed by remember {
         mutableStateOf(
             ComputedTimeWindow(
@@ -81,6 +88,13 @@ fun AddActivity(
             )
         )
     }
+
+    val teamSaver = Saver<Team, String>(
+        save = { it.name },
+        restore = { name -> Team.entries.firstOrNull { it.name == name } ?: Team.Unknown }
+    )
+    var selectedTeam by rememberSaveable(stateSaver = teamSaver) { mutableStateOf(Team.Unknown) }
+    var teamMenuExpanded by rememberSaveable { mutableStateOf(false) }
 
     var selectedUsers by remember { mutableStateOf<Set<User>>(emptySet()) }
     val assignCountOk = selectedUsers.size <= candidates
@@ -124,6 +138,51 @@ fun AddActivity(
                 onComputedChange = { computed = it },
                 modifier = Modifier.fillMaxWidth()
             )
+        }
+        item{
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween){
+                Text(
+                    text = stringResource(
+                        R.string.add_activity_attach_team
+                    )
+                )
+                Switch(
+                    checked = attachTeamToActivity,
+                    onCheckedChange = {attachTeamToActivity = it},
+                )
+            }
+            if(attachTeamToActivity){
+                ExposedDropdownMenuBox(expanded = teamMenuExpanded,
+                    onExpandedChange = { teamMenuExpanded = !teamMenuExpanded }) {
+                    OutlinedTextField(
+                        value = stringResource(selectedTeam.labelRes),
+                        label = { Text(stringResource(R.string.select_team)) },
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = teamMenuExpanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                            .testTag("txtTeamFilter")
+                    )
+                    ExposedDropdownMenu(expanded = teamMenuExpanded,
+                        onDismissRequest = { teamMenuExpanded = false })
+                    {
+                        Team.entries.forEach { team ->
+                            DropdownMenuItem(
+                                text = { Text(stringResource(team.labelRes)) },
+                                onClick = {
+                                    selectedTeam = team
+                                    teamMenuExpanded = false
+                                }
+                            )
+                        }
+
+                    }
+                }
+
+            }
+
         }
 
         item {

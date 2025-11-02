@@ -102,14 +102,14 @@
     <string name="keyword_all">all</string>
     <string name="keyword_all_users">all users</string>
 
-    <string name="candidates_input_mode">Candidates input: %1$s</string>
+    <string name="candidates_input_mode">Professions needed: %1$s</string>
     <string name="mode_slider">Slider</string>
     <string name="mode_text">Text</string>
-    <string name="select_number_of_candidates">Select number of candidates</string>
+    <string name="select_number_of_candidates">Select number of professions</string>
     <string name="selected_n">Selected: %1$d</string>
     <string name="number_of_candidates_range">Number of candidates (%1$d..%2$d)</string>
 
-    <string name="create_activity_title">Create activity</string>
+    <string name="create_activity_title">Add activity</string>
     <string name="error_selected_users_exceeds">You selected %1$d users but candidates limit is %2$d.</string>
 
     <string name="dialog_select_item">Select Item</string>
@@ -160,6 +160,10 @@
 
     <string name="no_users_available">No users available</string>
     <string name="select_user">Select user</string>
+
+    <string name="select_team">Select Team</string>
+    <string name="add_activity_attach_team">Attach team to activity</string>
+
 
 
 

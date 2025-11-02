@@ -234,7 +234,6 @@ fun AddUser(
             )
         }
 
-        // ---------- TEAM DROPDOWN (fixed & complete) ----------
         item {
             ExposedDropdownMenuBox(
                 expanded = teamMenuExpanded,
