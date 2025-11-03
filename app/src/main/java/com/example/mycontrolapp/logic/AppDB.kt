@@ -15,7 +15,7 @@ import com.example.mycontrolapp.logic.dao.UserProfessionDao
         Assignment::class,
         ActivityRoleRequirement::class,
         UserProfession::class],
-    version = 15,
+    version = 17,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

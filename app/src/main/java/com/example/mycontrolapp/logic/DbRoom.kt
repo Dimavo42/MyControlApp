@@ -12,13 +12,12 @@ import java.util.*
 data class User(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val name: String,
-    val skills: List<String> = emptyList(),
     val isActive: Boolean = true,
     val canFillAnyRole: Boolean = false,
     val team: Team? = null
 ) {
     override fun toString(): String {
-        val skillsString = if (skills.isEmpty()) "No skills" else skills.joinToString("|")
+        val skillsString = team?.name?: "no team"
         return "User -> $name -> $skillsString"
     }
 }
@@ -105,7 +104,9 @@ data class Assignment(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val activityId: String,
     val userId: String,
-    val role: Profession
+    val role: Profession,
+    val orderInActivity: Int = 0,
+    val allocatedMinutes: Int? = null
 )
 
 /* ============================

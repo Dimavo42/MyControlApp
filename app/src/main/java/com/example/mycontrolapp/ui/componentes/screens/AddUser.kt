@@ -53,7 +53,6 @@ fun AddUser(
     // Form fields
     var firstName by rememberSaveable { mutableStateOf("") }
     var lastName by rememberSaveable { mutableStateOf("") }
-    var preferences by rememberSaveable { mutableStateOf("") }
     var canFillAnyRole by rememberSaveable { mutableStateOf(false) }
 
     // Team fields
@@ -109,11 +108,10 @@ fun AddUser(
             val parts = selectedUser.name.trim().split(" ")
             firstName = parts.firstOrNull().orEmpty()
             lastName = parts.drop(1).joinToString(" ")
-            preferences = selectedUser.skills.joinToString(", ")
             canFillAnyRole = selectedUser.canFillAnyRole
             selectedTeamName = selectedUser.team?.name
         } else if (mode == UserEditorMode.Add) {
-            firstName = ""; lastName = ""; preferences = ""; canFillAnyRole = false
+            firstName = ""; lastName = "";  canFillAnyRole = false
             selectedUserId = null
             selectedProfNames = emptySet()
             selectedTeamName = null
@@ -223,15 +221,6 @@ fun AddUser(
             )
         }
 
-        item {
-            OutlinedTextField(
-                value = preferences,
-                onValueChange = { preferences = it },
-                label = { Text(stringResource(R.string.label_skills_prefs)) },
-                enabled = fieldsEnabled,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
 
         item {
             ExposedDropdownMenuBox(
@@ -363,12 +352,8 @@ fun AddUser(
                         Button(
                             enabled = isFormValid,
                             onClick = {
-                                val skills = preferences.split(',')
-                                    .map { it.trim() }
-                                    .filter { it.isNotEmpty() }
                                 val newUser = User(
                                     name = "${firstName.trim()} ${lastName.trim()}",
-                                    skills = skills,
                                     isActive = true,
                                     canFillAnyRole = canFillAnyRole,
                                     team = selectedTeam                     // ⬅️ save team
@@ -384,13 +369,9 @@ fun AddUser(
                         Button(
                             enabled = fieldsEnabled && isFormValid && selectedUser != null,
                             onClick = {
-                                val skills = preferences.split(',')
-                                    .map { it.trim() }
-                                    .filter { it.isNotEmpty() }
                                 val current = selectedUser ?: return@Button
                                 val updated = current.copy(
                                     name = "${firstName.trim()} ${lastName.trim()}",
-                                    skills = skills,
                                     canFillAnyRole = canFillAnyRole,
                                     team = selectedTeam                  // ⬅️ save team
                                 )
@@ -414,7 +395,6 @@ fun AddUser(
                                 selectedUserId = null
                                 firstName = ""
                                 lastName = ""
-                                preferences = ""
                                 canFillAnyRole = false
                                 selectedProfNames = emptySet()
                                 selectedTeamName = null
@@ -425,7 +405,6 @@ fun AddUser(
                         onClick = {
                             firstName = ""
                             lastName = ""
-                            preferences = ""
                             canFillAnyRole = false
                             selectedProfNames = emptySet()
                             selectedTeamName = null
