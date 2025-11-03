@@ -75,4 +75,10 @@ interface AssignmentDao {
 
     @Query("SELECT * FROM assignments WHERE activityId = :activityId")
     fun assignmentsForActivityFlow(activityId: String): Flow<List<Assignment>>
+
+    @Query("SELECT * FROM assignments WHERE activityId = :activityId ORDER BY orderInActivity ASC")
+    fun getAssignmentsForActivityOrdered(activityId: String): Flow<List<Assignment>>
+
+    @Query("DELETE FROM assignments WHERE activityId = :activityId")
+    suspend fun deleteByActivity(activityId: String)
 }

@@ -2,6 +2,7 @@ package com.example.mycontrolapp.logic
 import androidx.room.TypeConverter
 import com.example.mycontrolapp.logic.sharedEnums.Profession
 import com.example.mycontrolapp.logic.sharedEnums.Team
+import com.example.mycontrolapp.logic.sharedEnums.TimeSplitMode
 import java.time.LocalDate
 import java.util.*
 
@@ -47,5 +48,14 @@ class Converters {
     @TypeConverter
     fun toProfession(s: String?): Profession? =
         s?.let { runCatching { Profession.valueOf(it) }.getOrElse { Profession.Unknown } }
+
+    /* ---------- TimeSplitMode <-> String ---------- */
+    @TypeConverter
+    fun fromTimeSplitMode(p: TimeSplitMode?): String? = p?.name
+
+
+    @TypeConverter
+    fun toTimeSplitMode(value: String?): TimeSplitMode? =
+        value?.let { runCatching { TimeSplitMode.valueOf(it) }.getOrElse { TimeSplitMode.NONE } }
 
 }

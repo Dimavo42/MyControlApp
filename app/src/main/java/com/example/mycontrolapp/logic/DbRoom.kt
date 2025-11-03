@@ -2,6 +2,7 @@ package com.example.mycontrolapp.logic
 import androidx.room.*
 import com.example.mycontrolapp.logic.sharedEnums.Profession
 import com.example.mycontrolapp.logic.sharedEnums.Team
+import com.example.mycontrolapp.logic.sharedEnums.TimeSplitMode
 import java.time.LocalDate
 import java.util.*
 
@@ -65,7 +66,8 @@ data class Activity(
     @ColumnInfo(name = "start_at") val startAt: Long,
     @ColumnInfo(name = "end_at")   val endAt: Long,
     @ColumnInfo(name = "date_epoch_day") val dateEpochDay: Int,
-    @ColumnInfo(name = "team") val team: Team? = null
+    @ColumnInfo(name = "team") val team: Team? = null,
+    @ColumnInfo(name = "time_split_mode") val timeSplitMode: TimeSplitMode = TimeSplitMode.NONE
 ) {
     init { require(endAt >= startAt) { "endAt must be >= startAt" } }
 
@@ -95,8 +97,8 @@ data class Activity(
         )
     ],
     indices = [
-        Index(value = ["activityId", "userId"], unique = true), // one assignment per user per activity
-        Index("activityId"), // index FKs explicitly to avoid warnings
+        Index(value = ["activityId", "orderInActivity"], unique = true),
+        Index("activityId"),
         Index("userId")
     ]
 )
