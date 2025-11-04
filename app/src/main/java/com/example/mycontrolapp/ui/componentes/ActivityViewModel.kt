@@ -182,7 +182,9 @@ class ActivityViewModel @Inject constructor(
     }
 
     fun assignUser(activityId: String, userId: String, profession: Profession) = viewModelScope.launch {
-        listManager.addAssignment(Assignment(activityId = activityId, userId = userId, role = profession))
+        val currentMax = listManager.getMaxOrderForActivity(activityId) ?: -1
+        val nextOrder = currentMax + 1
+        listManager.addAssignment(Assignment(activityId = activityId, userId = userId, role = profession,orderInActivity  = nextOrder))
     }
 
     fun unassignUser(activityId: String, userId: String) = viewModelScope.launch {

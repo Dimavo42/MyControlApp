@@ -145,6 +145,10 @@ class ListManagerRoom @Inject constructor(
     override fun requiredCountsAllFlow() =
         db.activityRoleRequirementDao().requiredCountsAllFlow()
 
+    override suspend fun getMaxOrderForActivity(activityId: String): Int? {
+        return db.assignmentDao().getMaxOrderForActivity(activityId)
+    }
+
     override suspend fun deleteAllRequirementsForActivity(activityId: String) {
         db.activityRoleRequirementDao().deleteAllForActivity(activityId)
     }
@@ -152,4 +156,6 @@ class ListManagerRoom @Inject constructor(
     override fun assignedCountForActivityFlow(activityId: String): Flow<Int> =
         assignmentsByActivityFlow(activityId)
             .map { list -> list.size }
+
+
 }

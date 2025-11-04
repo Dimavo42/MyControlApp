@@ -38,6 +38,8 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import com.example.mycontrolapp.R
+import com.example.mycontrolapp.logic.algorithms.buildTimeSplitAssignments
+import com.example.mycontrolapp.logic.sharedData.TimeSegment
 import com.example.mycontrolapp.logic.sharedEnums.Team
 import com.example.mycontrolapp.logic.sharedEnums.UserEditorMode
 
@@ -111,10 +113,41 @@ fun AssignmentScreen(
     fun LocalTime.toHhMm(): String = DateTimeFormatter.ofPattern("HH:mm").format(this)
     fun LocalDate.toDdMmYyyy(): String = DateTimeFormatter.ofPattern("dd/MM/uuuu").format(this)
 
-    var dateText by remember(activity.id) { mutableStateOf(TextFieldValue(initialLocalDate.toDdMmYyyy())) }
-    var startTimeText by remember(activity.id) { mutableStateOf(TextFieldValue(initialStart.toHhMm())) }
-    var endTimeText by remember(activity.id) { mutableStateOf(TextFieldValue(initialEnd.toHhMm())) }
+    // Users that are already assigned to this activity (optionally filtered by team)
+    val participantsForTimeSplit: List<User> = remember(assignmentsForActivity, usersById, team) {
+        val assignedUsers = assignmentsForActivity
+            .mapNotNull { asg -> usersById[asg.userId] }
+            .distinctBy { it.id }   // just in case the same user appears multiple times
 
+        if (team != null) {
+            assignedUsers.filter { it.team == team }
+        } else {
+            assignedUsers
+        }
+    }
+
+
+    var dateText by remember(activity.id) {
+        mutableStateOf(
+            TextFieldValue(
+                initialLocalDate.toDdMmYyyy()
+            )
+        )
+    }
+    var startTimeText by remember(activity.id) {
+        mutableStateOf(
+            TextFieldValue(
+                initialStart.toHhMm()
+            )
+        )
+    }
+    var endTimeText by remember(activity.id) {
+        mutableStateOf(
+            TextFieldValue(
+                initialEnd.toHhMm()
+            )
+        )
+    }
 
     var computed by remember(activity.id) {
         mutableStateOf(
@@ -150,15 +183,26 @@ fun AssignmentScreen(
             List(remaining) { idx -> RoleNeed(req.profession, idx) }
         }
     }
+
+    // All assignments are ready when there are no needed seats
+    val allSeatsFilled = neededSeats.isEmpty()
+
     // Time split Mode actions
     var timeSplitMode by rememberSaveable { mutableStateOf(false) }
     var timeSplitText by rememberSaveable { mutableStateOf("") }
-    var applySplit by rememberSaveable { mutableStateOf(false) }
+    var timeSplitSegments by remember(activity.id) {
+        mutableStateOf<List<TimeSegment>>(emptyList())
+    }
 
+    // Reset time split if assignments are no longer fully ready
+    LaunchedEffect(allSeatsFilled) {
+        if (!allSeatsFilled) {
+            timeSplitMode = false
+            timeSplitText = ""
+            timeSplitSegments = emptyList()
+        }
+    }
 
-
-    // --- Options per role (respect team rule) ---
-    @Composable
     fun optionsFor(): List<User> {
         return if (team == null) {
             unassignedUsers // open activity → all users
@@ -170,6 +214,8 @@ fun AssignmentScreen(
     // For each "need" seat, keep a local selection until you click Assign
     var pending by remember(activity.id) { mutableStateOf<Map<String, String?>>(emptyMap()) }
     fun selectionKey(n: RoleNeed) = "${n.profession.name}#${n.seatIndex}"
+    val zoneId = remember { ZoneId.systemDefault() }
+    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
 
     /* ---------------------------------- UI ---------------------------------- */
     LazyColumn(
@@ -196,8 +242,7 @@ fun AssignmentScreen(
             TabRow(
                 selectedTabIndex = when (mode) {
                     UserEditorMode.Fill -> 0
-                    UserEditorMode.Edit -> 1
-                    UserEditorMode.Add -> 2
+                    else -> 1
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -242,8 +287,7 @@ fun AssignmentScreen(
         item {
             if (mode == UserEditorMode.Edit) {
                 val valueLabel = team?.let { t ->
-                    // If you have labelRes on Team, prefer stringResource(t.labelRes)
-                    t.name
+                    t.name // or stringResource(t.labelRes)
                 } ?: "All users"
 
                 ExposedDropdownMenuBox(
@@ -259,7 +303,11 @@ fun AssignmentScreen(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Team") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = teamMenuExpanded) },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(
+                                expanded = teamMenuExpanded
+                            )
+                        },
                         modifier = Modifier
                             .menuAnchor()
                             .fillMaxWidth()
@@ -328,7 +376,10 @@ fun AssignmentScreen(
         // Save activity (only in Edit mode)
         if (mode == UserEditorMode.Edit) {
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     Button(
                         enabled = canSave,
                         onClick = {
@@ -360,25 +411,33 @@ fun AssignmentScreen(
                     .semantics { contentDescription = "resourceId:lblNeededAssignments" }
             )
         }
+
+        // Time Split Mode switch
         item {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = "Time Split Mode")
                 Switch(
                     checked = timeSplitMode,
-                    onCheckedChange = { timeSplitMode = it }
+                    onCheckedChange = { checked ->
+                        if (allSeatsFilled) {
+                            timeSplitMode = checked
+                        }
+                    },
+                    enabled = allSeatsFilled
                 )
             }
-
         }
 
+        // Time Split controls
         if (timeSplitMode) {
             item {
-                val enabledOptions = optionsFor().isNotEmpty()
+                val enabledOptions = allSeatsFilled
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -395,11 +454,21 @@ fun AssignmentScreen(
                         label = { Text("Time Split") },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number
-                        )
+                        ),
+                        modifier = Modifier.weight(1f)
                     )
                     Button(
-                        onClick = { applySplit = !applySplit },
-                        enabled = enabledOptions
+                        onClick = {
+                            val segments = buildTimeSplitAssignments(
+                                startTime = computed.startAtMillis!!,
+                                endTime = computed.endAtMillis!!,
+                                splitSizeMinutes = timeSplitText.toInt(),
+                                unassignedUsers = participantsForTimeSplit,
+                                team = team
+                            )
+                            timeSplitSegments = segments
+                        },
+                        enabled = enabledOptions && timeSplitText.isNotBlank()
                     ) {
                         Text("Apply")
                     }
@@ -407,135 +476,178 @@ fun AssignmentScreen(
             }
         }
 
-
-            if (neededSeats.isEmpty()) {
-                item {
-                    Text(
-                        stringResource(R.string.msg_all_roles_full),
-                        modifier = Modifier
-                            .testTag("txtNoNeeds")
-                            .semantics { contentDescription = "resourceId:txtNoNeeds" }
-                    )
-                }
-            } else {
-                items(
-                    items = neededSeats,
-                    key = { need -> "need_${need.profession.name}_${need.seatIndex}" }
-                ) { need ->
-                    val opts = optionsFor()
-                    val hasOptions = opts.isNotEmpty()
-                    val key = selectionKey(need)
-                    val selectedId = pending[key]
-
-                    AssignmentRow(
-                        profession = need.profession,
-                        options = opts,
-                        selectedUserId = selectedId,
-                        onSelect = { u ->
-                            pending = pending.toMutableMap().apply { put(key, u?.id) }
-                        },
-                        onAssign = {
-                            val uid = selectedId ?: return@AssignmentRow
-                            viewModel.assignUser(
-                                activityId = activity.id,
-                                userId = uid,
-                                profession = need.profession
-                            )
-                            // Clear selection for this slot; flows will update and this row will disappear
-                            pending = pending.toMutableMap().apply { remove(key) }
-                        },
-                        enabled = hasOptions && selectedId != null
-                    )
-                    HorizontalDivider(Modifier.padding(5.dp))
-                }
-            }
-
-            // ------------------ Existing assignments ------------------
+        if (neededSeats.isEmpty()) {
             item {
                 Text(
-                    stringResource(R.string.title_existing_assignments),
-                    style = MaterialTheme.typography.titleSmall,
+                    stringResource(R.string.msg_all_roles_full),
                     modifier = Modifier
-                        .testTag("lblExistingAssignments")
-                        .semantics { contentDescription = "resourceId:lblExistingAssignments" }
+                        .testTag("txtNoNeeds")
+                        .semantics { contentDescription = "resourceId:txtNoNeeds" }
                 )
             }
-
-            if (assignmentsForActivity.isEmpty()) {
-                item {
-                    Text(
-                        stringResource(R.string.msg_no_assignments_yet),
-                        modifier = Modifier
-                            .testTag("txtNoAssignments")
-                            .semantics { contentDescription = "resourceId:txtNoAssignments" }
-                    )
-                }
-            } else {
-                items(
-                    items = assignmentsForActivity,
-                    key = { it.id }
-                ) { asg ->
-                    val user = usersById[asg.userId]
-                    ElevatedCard(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("cardAssignment_${asg.id}")
-                            .semantics {
-                                contentDescription = "resourceId:cardAssignment_${asg.id}"
-                            }
-                    ) {
-                        ListItem(
-                            headlineContent = {
-                                Text(
-                                    user?.name ?: stringResource(R.string.unknown_user)
-                                )
-                            },
-                            supportingContent = { Text(stringResource(asg.role.labelRes)) },
-                            trailingContent = {
-                                TextButton(
-                                    onClick = { viewModel.unassignUser(activityId, asg.userId) }
-                                ) { Text(stringResource(R.string.action_unassign)) }
-                            }
+        } else {
+            items(
+                items = neededSeats,
+                key = { need -> "need_${need.profession.name}_${need.seatIndex}" }
+            ) { need ->
+                val opts = optionsFor()
+                val hasOptions = opts.isNotEmpty()
+                val key = selectionKey(need)
+                val selectedId = pending[key]
+                AssignmentRow(
+                    profession = need.profession,
+                    options = opts,
+                    selectedUserId = selectedId,
+                    onSelect = { u ->
+                        pending = pending.toMutableMap().apply { put(key, u?.id) }
+                    },
+                    onAssign = {
+                        val uid = selectedId ?: return@AssignmentRow
+                        viewModel.assignUser(
+                            activityId = activity.id,
+                            userId = uid,
+                            profession = need.profession
                         )
-                    }
-                }
+                        // Clear selection for this slot; flows will update and this row will disappear
+                        pending = pending.toMutableMap().apply { remove(key) }
+                    },
+                    enabled = hasOptions && selectedId != null
+                )
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 5.dp)
+                )
             }
+        }
 
-            // ------------------ Bottom actions ------------------
+        // ------------------ Existing assignments ------------------
+        item {
+            Text(
+                stringResource(R.string.title_existing_assignments),
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier
+                    .testTag("lblExistingAssignments")
+                    .semantics { contentDescription = "resourceId:lblExistingAssignments" }
+            )
+        }
+
+        if (assignmentsForActivity.isEmpty()) {
             item {
-                val allSeatsFilled = neededSeats.isEmpty()
-
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (allSeatsFilled) {
-                        Button(
-                            onClick = { navController.popBackStack() },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF2E7D32),
-                                contentColor = Color.White
-                            ),
-                            modifier = Modifier
-                                .testTag("btnBack")
-                                .semantics { contentDescription = "resourceId:btnBack" }
-                        ) { Text(stringResource(R.string.common_back)) }
-                    } else {
-                        OutlinedButton(
-                            onClick = { navController.popBackStack() },
-                            modifier = Modifier
-                                .testTag("btnBack")
-                                .semantics { contentDescription = "resourceId:btnBack" }
-                        ) { Text(stringResource(R.string.common_back)) }
-                    }
-
-                    OutlinedButton(
-                        onClick = { /* optional submit action for pending selections, if you add one */ },
-                        modifier = Modifier
-                            .testTag("btnAssign")
-                            .semantics { contentDescription = "resourceId:btnAssign" }
-                    ) { Text(stringResource(R.string.common_assgin)) }
+                Text(
+                    stringResource(R.string.msg_no_assignments_yet),
+                    modifier = Modifier
+                        .testTag("txtNoAssignments")
+                        .semantics { contentDescription = "resourceId:txtNoAssignments" }
+                )
+            }
+        } else {
+            items(
+                items = assignmentsForActivity,
+                key = { it.id }
+            ) { asg ->
+                val user = usersById[asg.userId]
+                ElevatedCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("cardAssignment_${asg.id}")
+                        .semantics {
+                            contentDescription = "resourceId:cardAssignment_${asg.id}"
+                        }
+                ) {
+                    ListItem(
+                        headlineContent = {
+                            Text(
+                                user?.name ?: stringResource(R.string.unknown_user)
+                            )
+                        },
+                        supportingContent = { Text(stringResource(asg.role.labelRes)) },
+                        trailingContent = {
+                            TextButton(
+                                onClick = { viewModel.unassignUser(activityId, asg.userId) }
+                            ) { Text(stringResource(R.string.action_unassign)) }
+                        }
+                    )
                 }
             }
         }
+
+        // ------------------ Time split result cards ------------------
+        if (timeSplitMode && timeSplitSegments.isNotEmpty()) {
+
+            item {
+                Text(
+                    text = "Time Split Assignments",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .testTag("lblTimeSplitAssignments")
+                )
+            }
+            items(
+                items = timeSplitSegments,
+                key = { seg -> seg.hashCode() }
+            ) { seg ->
+                val start = Instant.ofEpochMilli(seg.start)
+                    .atZone(zoneId)
+                    .toLocalTime()
+                val end = Instant.ofEpochMilli(seg.end)
+                    .atZone(zoneId)
+                    .toLocalTime()
+                val userName = usersById[seg.userId]?.name ?: "Unassigned"
+                ElevatedCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .testTag("cardTimeSegment_${seg.hashCode()}")
+                ) {
+                    ListItem(
+                        headlineContent = {
+                            Text(userName)
+                        },
+                        supportingContent = {
+                            Text("${start.format(timeFormatter)} - ${end.format(timeFormatter)}")
+                        }
+                    )
+                }
+            }
+        }
+
+        // ------------------ Bottom actions ------------------
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (allSeatsFilled) {
+                    Button(
+                        onClick = { navController.popBackStack() },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF2E7D32),
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier
+                            .testTag("btnBack")
+                            .semantics { contentDescription = "resourceId:btnBack" }
+                    ) { Text(stringResource(R.string.common_back)) }
+                } else {
+                    OutlinedButton(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier
+                            .testTag("btnBack")
+                            .semantics { contentDescription = "resourceId:btnBack" }
+                    ) { Text(stringResource(R.string.common_back)) }
+                }
+
+                OutlinedButton(
+                    onClick = { /* optional submit action for pending selections, if you add one */ },
+                    modifier = Modifier
+                        .testTag("btnAssign")
+                        .semantics { contentDescription = "resourceId:btnAssign" }
+                ) { Text(stringResource(R.string.common_assgin)) }
+            }
+        }
     }
+}
 
 
 

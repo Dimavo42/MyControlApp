@@ -5,21 +5,20 @@ import com.example.mycontrolapp.logic.sharedData.TimeSegment
 import com.example.mycontrolapp.logic.sharedEnums.Team
 
 fun buildTimeSplitAssignments(
-    startTimeText: String,
-    endTimeText: String,
-    timeSplitText: String,
+    startTime: Long,       // millis
+    endTime: Long,         // millis
+    splitSizeMinutes: Int, // minutes per segment
     unassignedUsers: List<User>,
     team: Team?
 ): List<TimeSegment> {
 
-    val startTime = startTimeText.toLong()
-    val endTime = endTimeText.toLong()
-    val splitSize = timeSplitText.toLong()
+    if (splitSizeMinutes <= 0) return emptyList()
 
+    val splitSizeMillis = splitSizeMinutes * 60_000L
     val totalTime = endTime - startTime
-    if (totalTime <= 0 || splitSize <= 0) return emptyList()
+    if (totalTime <= 0) return emptyList()
 
-    val listOfSuggestedAssigned: List<User> =
+    val listOfSuggestedAssigned =
         if (team == null) unassignedUsers
         else unassignedUsers.filter { it.team == team }
 
@@ -35,8 +34,7 @@ fun buildTimeSplitAssignments(
     while (remaining > 0) {
         val user = listOfSuggestedAssigned[index]
 
-        // last chunk can be smaller so we don't go past endTime
-        val chunk = minOf(splitSize, remaining)
+        val chunk = minOf(splitSizeMillis, remaining)
         val segmentStart = currentTime
         val segmentEnd = currentTime + chunk
 
@@ -48,8 +46,6 @@ fun buildTimeSplitAssignments(
 
         currentTime = segmentEnd
         remaining -= chunk
-
-        // round-robin: go to next user, wrap to 0 when at end
         index = (index + 1) % size
     }
 

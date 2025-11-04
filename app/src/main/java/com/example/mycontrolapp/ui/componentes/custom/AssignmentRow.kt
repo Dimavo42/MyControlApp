@@ -24,6 +24,7 @@ import com.example.mycontrolapp.logic.User
 import com.example.mycontrolapp.logic.sharedEnums.Profession
 import kotlin.collections.forEach
 import com.example.mycontrolapp.R
+import com.example.mycontrolapp.logic.sharedData.TimeSegment
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,12 +80,13 @@ fun AssignmentRow(
                     )
                 }
             }
-        }
 
+        }
+    }
+    Row{
         Button(
             onClick = onAssign,
             enabled = enabled,
-            modifier = Modifier.weight(1f)
         ) { Text(stringResource(R.string.action_assign)) }
     }
 }

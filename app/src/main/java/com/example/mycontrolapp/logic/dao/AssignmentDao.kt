@@ -81,4 +81,7 @@ interface AssignmentDao {
 
     @Query("DELETE FROM assignments WHERE activityId = :activityId")
     suspend fun deleteByActivity(activityId: String)
+
+    @Query("SELECT MAX(orderInActivity) FROM assignments WHERE activityId = :activityId")
+    suspend fun getMaxOrderForActivity(activityId: String): Int?
 }

@@ -57,6 +57,9 @@ interface ListManager {
 
     fun requiredCountsAllFlow(): Flow<List<RequiredCountRow>>
 
+    suspend fun getMaxOrderForActivity(activityId: String): Int?
+
+
 }
 
 
