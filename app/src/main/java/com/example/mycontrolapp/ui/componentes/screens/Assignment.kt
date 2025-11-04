@@ -433,6 +433,18 @@ fun AssignmentScreen(
                 )
             }
         }
+        if (!allSeatsFilled) {
+            item {
+                Text(
+                    text = "To use Time Split Mode, you must assign all required users first.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                )
+            }
+        }
 
         // Time Split controls
         if (timeSplitMode) {
@@ -637,13 +649,17 @@ fun AssignmentScreen(
                             .semantics { contentDescription = "resourceId:btnBack" }
                     ) { Text(stringResource(R.string.common_back)) }
                 }
-
                 OutlinedButton(
-                    onClick = { /* optional submit action for pending selections, if you add one */ },
+                    onClick = {
+                        timeSplitSegments = emptyList()
+                        timeSplitText = ""
+                    },
                     modifier = Modifier
-                        .testTag("btnAssign")
-                        .semantics { contentDescription = "resourceId:btnAssign" }
-                ) { Text(stringResource(R.string.common_assgin)) }
+                        .weight(1f)
+                        .testTag("btnResetTimeSplit")
+                ) {
+                    Text("Reset")
+                }
             }
         }
     }
