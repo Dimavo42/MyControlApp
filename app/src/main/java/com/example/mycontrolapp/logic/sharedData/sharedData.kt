@@ -1,5 +1,6 @@
 package com.example.mycontrolapp.logic.sharedData
 
+import com.example.mycontrolapp.logic.User
 import com.example.mycontrolapp.logic.sharedEnums.Profession
 
 data class AssignedCountRow(
@@ -15,5 +16,11 @@ data class RequiredCountRow(
 data class RoleNeed(
     val profession: Profession,
     val seatIndex: Int
+)
+
+data class TimeSegment(
+    val userId: String,
+    val start: Long,
+    val end: Long
 )
 
