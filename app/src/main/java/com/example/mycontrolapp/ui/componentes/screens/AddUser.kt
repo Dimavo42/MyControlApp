@@ -415,12 +415,6 @@ fun AddUser(
             }
         }
 
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = { navController.navigateUp() }) { Text(stringResource(R.string.common_back)) }
-            }
-        }
-
         item { Spacer(Modifier.height(24.dp)) }
     }
 }

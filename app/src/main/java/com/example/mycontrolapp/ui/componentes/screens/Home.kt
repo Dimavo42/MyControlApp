@@ -58,16 +58,6 @@ fun HomeScreen(
                 )
             }
         }
-        item {
-            Row(modifier = Modifier.padding(5.dp),horizontalArrangement = Arrangement.spacedBy(16.dp)){
-                LazyAlertDialogButton(title = "Users", items = users)
-                LazyAlertDialogButton(title = "Activities", items = activitiesFiltered)
-            }
-
-        }
-
-
-
     }
 }
 

@@ -23,6 +23,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.myapp.appNavigation.AppDestinations
 import com.example.mycontrolapp.logic.Activity
 import com.example.mycontrolapp.logic.User
 import com.example.mycontrolapp.logic.sharedData.RoleNeed
@@ -421,7 +422,7 @@ fun AssignmentScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Time Split Mode")
+                Text(text = "Time Split Mode in munites")
                 Switch(
                     checked = timeSplitMode,
                     onCheckedChange = { checked ->
@@ -630,6 +631,16 @@ fun AssignmentScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                OutlinedButton(
+                    enabled = allSeatsFilled,
+                    onClick = { navController.navigate(AppDestinations.Home) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF2E7D32),
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier
+                        .testTag("btnBack")
+                ) { Text("Save") }
                 if (allSeatsFilled) {
                     Button(
                         onClick = { navController.popBackStack() },
@@ -655,7 +666,6 @@ fun AssignmentScreen(
                         timeSplitText = ""
                     },
                     modifier = Modifier
-                        .weight(1f)
                         .testTag("btnResetTimeSplit")
                 ) {
                     Text("Reset")
