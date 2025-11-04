@@ -1,5 +1,6 @@
 package com.example.mycontrolapp.logic
 import androidx.room.withTransaction
+import com.example.mycontrolapp.logic.sharedData.TimeSegment
 import com.example.mycontrolapp.logic.sharedEnums.Profession
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -149,10 +150,28 @@ class ListManagerRoom @Inject constructor(
         return db.assignmentDao().getMaxOrderForActivity(activityId)
     }
 
+    override fun timeSplitState(activityId: String): Flow<ActivityTimeSplit?> =
+        db.ActivityTimeSplitDao().observe(activityId)
+
+    override suspend fun saveTimeSplitState(
+        activityId: String,
+        segments: List<TimeSegment>,
+        splitMinutes: Int
+    ) {
+        db.ActivityTimeSplitDao().upsert(
+            ActivityTimeSplit(
+                activityId = activityId,
+                splitMinutes = splitMinutes,
+                segments = segments
+            )
+        )
+    }
+    override suspend fun clearTimeSplitState(activityId: String) {
+        db.ActivityTimeSplitDao().clear(activityId)
+    }
     override suspend fun deleteAllRequirementsForActivity(activityId: String) {
         db.activityRoleRequirementDao().deleteAllForActivity(activityId)
     }
-
     override fun assignedCountForActivityFlow(activityId: String): Flow<Int> =
         assignmentsByActivityFlow(activityId)
             .map { list -> list.size }

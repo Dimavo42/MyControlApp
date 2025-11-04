@@ -1,6 +1,7 @@
 package com.example.mycontrolapp.logic
 import com.example.mycontrolapp.logic.sharedData.AssignedCountRow
 import com.example.mycontrolapp.logic.sharedData.RequiredCountRow
+import com.example.mycontrolapp.logic.sharedData.TimeSegment
 import com.example.mycontrolapp.logic.sharedEnums.Profession
 import kotlinx.coroutines.flow.Flow
 
@@ -59,6 +60,15 @@ interface ListManager {
 
     suspend fun getMaxOrderForActivity(activityId: String): Int?
 
+    fun timeSplitState(activityId: String): Flow<ActivityTimeSplit?>
+
+    suspend fun saveTimeSplitState(
+        activityId: String,
+        segments: List<TimeSegment>,
+        splitMinutes: Int
+    )
+
+    suspend fun clearTimeSplitState(activityId: String)
 
 }
 

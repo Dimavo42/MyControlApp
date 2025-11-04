@@ -5,6 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.example.mycontrolapp.logic.dao.ActivityDao
 import com.example.mycontrolapp.logic.dao.ActivityRoleRequirementDao
+import com.example.mycontrolapp.logic.dao.ActivityTimeSplitDao
 import com.example.mycontrolapp.logic.dao.AssignmentDao
 import com.example.mycontrolapp.logic.dao.UserDao
 import com.example.mycontrolapp.logic.dao.UserProfessionDao
@@ -14,8 +15,9 @@ import com.example.mycontrolapp.logic.dao.UserProfessionDao
         User::class,
         Assignment::class,
         ActivityRoleRequirement::class,
-        UserProfession::class],
-    version = 18,
+        UserProfession::class,
+        ActivityTimeSplit::class],
+    version = 20,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -25,5 +27,7 @@ abstract class AppDb : RoomDatabase() {
     abstract fun assignmentDao(): AssignmentDao
     abstract fun userProfessionDao(): UserProfessionDao
     abstract fun activityRoleRequirementDao(): ActivityRoleRequirementDao
+    abstract fun  ActivityTimeSplitDao(): ActivityTimeSplitDao
+
 
 }

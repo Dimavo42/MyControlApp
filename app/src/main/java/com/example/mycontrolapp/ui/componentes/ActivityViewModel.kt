@@ -3,9 +3,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mycontrolapp.logic.Activity
 import com.example.mycontrolapp.logic.ActivityRoleRequirement
+import com.example.mycontrolapp.logic.ActivityTimeSplit
 import com.example.mycontrolapp.logic.Assignment
 import com.example.mycontrolapp.logic.ListManager
 import com.example.mycontrolapp.logic.User
+import com.example.mycontrolapp.logic.sharedData.TimeSegment
 import com.example.mycontrolapp.logic.sharedEnums.Profession
 import com.example.mycontrolapp.logic.sharedEnums.Team
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -264,8 +266,20 @@ class ActivityViewModel @Inject constructor(
         }.shareIn(viewModelScope, started = SharingStarted.WhileSubscribed(5_000), replay = 1)
 
 
+    fun timeSplitState(activityId: String): Flow<ActivityTimeSplit?> =
+        listManager.timeSplitState(activityId)
 
+    fun saveTimeSplitState(
+        activityId: String,
+        segments: List<TimeSegment>,
+        splitMinutes: Int
+    ) = viewModelScope.launch {
+        listManager.saveTimeSplitState(activityId, segments, splitMinutes)
+    }
 
+    fun clearTimeSplitState(activityId: String) = viewModelScope.launch {
+        listManager.clearTimeSplitState(activityId)
+    }
 
 
     fun requiredCountForActivity(activityId: String) =

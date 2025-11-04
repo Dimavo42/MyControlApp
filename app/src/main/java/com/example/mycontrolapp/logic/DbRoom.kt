@@ -1,13 +1,11 @@
 package com.example.mycontrolapp.logic
 import androidx.room.*
+import com.example.mycontrolapp.logic.sharedData.TimeSegment
 import com.example.mycontrolapp.logic.sharedEnums.Profession
 import com.example.mycontrolapp.logic.sharedEnums.Team
 import com.example.mycontrolapp.logic.sharedEnums.TimeSplitMode
 import java.time.LocalDate
 import java.util.*
-
-
-
 
 @Entity(tableName = "users")
 data class User(
@@ -22,7 +20,6 @@ data class User(
         return "User -> $name -> $skillsString"
     }
 }
-
 /**
  * Cross-reference table for many-to-many User ↔ Profession.
  * If [User.canFillAnyRole] is true you can ignore this row when filtering eligibility.
@@ -126,7 +123,7 @@ data class Assignment(
         )
     ],
     indices = [
-        Index(value = ["activityId", "profession"], unique = true), // one row per role per activity
+        Index(value = ["activityId", "profession"], unique = true),
         Index("activityId")
     ]
 )
@@ -135,4 +132,11 @@ data class ActivityRoleRequirement(
     val activityId: String,
     val profession: Profession,
     val requiredCount: Int
+)
+
+@Entity(tableName = "activity_time_split")
+data class ActivityTimeSplit(
+    @PrimaryKey val activityId: String,
+    val splitMinutes: Int,
+    val segments: List<TimeSegment>
 )
