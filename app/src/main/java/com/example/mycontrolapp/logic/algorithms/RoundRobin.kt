@@ -8,8 +8,7 @@ fun buildTimeSplitAssignments(
     startTime: Long,       // millis
     endTime: Long,         // millis
     splitSizeMinutes: Int, // minutes per segment
-    unassignedUsers: List<User>,
-    team: Team?
+    unassignedUsers: List<User>
 ): List<TimeSegment> {
 
     if (splitSizeMinutes <= 0) return emptyList()
@@ -18,21 +17,18 @@ fun buildTimeSplitAssignments(
     val totalTime = endTime - startTime
     if (totalTime <= 0) return emptyList()
 
-    val listOfSuggestedAssigned =
-        if (team == null) unassignedUsers
-        else unassignedUsers.filter { it.team == team }
 
-    if (listOfSuggestedAssigned.isEmpty()) return emptyList()
+    if (unassignedUsers.isEmpty()) return emptyList()
 
     val result = mutableListOf<TimeSegment>()
 
     var remaining = totalTime
     var currentTime = startTime
     var index = 0
-    val size = listOfSuggestedAssigned.size
+    val size = unassignedUsers.size
 
     while (remaining > 0) {
-        val user = listOfSuggestedAssigned[index]
+        val user = unassignedUsers[index]
 
         val chunk = minOf(splitSizeMillis, remaining)
         val segmentStart = currentTime

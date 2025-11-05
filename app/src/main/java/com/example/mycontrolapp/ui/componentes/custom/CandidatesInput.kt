@@ -32,7 +32,6 @@ fun CandidatesInput(
     onValueChange: (Int) -> Unit,
     min: Int = 0,
     max: Int = 10,
-    modifier: Modifier = Modifier,
     testTagPrefix: String = "candidates",
     initialUseSlider: Boolean = true,
 ) {
@@ -50,7 +49,7 @@ fun CandidatesInput(
         if (text != clampedStr) text = clampedStr
     }
 
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column( verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
                 text = stringResource(

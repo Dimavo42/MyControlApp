@@ -489,8 +489,7 @@ fun AssignmentScreen(
                                 startTime = computed.startAtMillis!!,
                                 endTime = computed.endAtMillis!!,
                                 splitSizeMinutes = minutes,
-                                unassignedUsers = participantsForTimeSplit,
-                                team = team
+                                unassignedUsers = participantsForTimeSplit
                             )
                             // Update UI
                             timeSplitSegments = segments
@@ -516,8 +515,7 @@ fun AssignmentScreen(
                                         startTime = computed.startAtMillis!!,
                                         endTime = computed.endAtMillis!!,
                                         splitSizeMinutes = minutes,
-                                        unassignedUsers = participantsForTimeSplit,
-                                        team = team
+                                        unassignedUsers = participantsForTimeSplit
                                     )
 
                                     timeSplitSegments = segments
