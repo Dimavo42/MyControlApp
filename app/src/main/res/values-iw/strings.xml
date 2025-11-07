@@ -94,12 +94,20 @@
     <string name="time_label_start">התחלה (HH:mm)</string>
     <string name="time_label_end">סיום (HH:mm)</string>
 
+    <string name="assignment_label_team">קבוצה </string>
+    <string name="label_fill">תמלא</string>
+
     <string name="date_filter_title">בחר תאריך לפעילויות</string>
     <string name="label_filter_by_user">סינון לפי משתמש</string>
     <string name="filter_all_users">כל המשתמשים</string>
     <string name="action_show">הצג</string>
     <string name="keyword_all">הכל</string>
     <string name="keyword_all_users">כל המשתמשים</string>
+    <string name="assignment_label_TimeSplit_2">כדי להשתמש במצב חלוקת זמן, עליך קודם להקצות את כל המשתמשים הנדרשים. </string>
+    <string name="action_apply">אשר</string>
+    <string name="action_reapply">אשר מחדש</string>
+
+
 
     <string name="candidates_input_mode">מספר מקצועות לשייך: %1$s</string>
     <string name="mode_slider">מחוון</string>
@@ -107,6 +115,8 @@
     <string name="select_number_of_candidates">בחר מספר מקצועות לפעילות</string>
     <string name="selected_n">נבחר: %1$d</string>
     <string name="number_of_candidates_range">מספר מועמדים (%1$d..%2$d)</string>
+
+    <string name="assignment_time_split"> חלוקת הזמן (בדקות)</string>
 
 
     <string name="add_activity_attach_team">שייך מחלקה למשימה</string>

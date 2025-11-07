@@ -24,6 +24,9 @@
     <string name="no_users_assigned">אין משתמשים משויכים לפעילות זו.</string>
     <string name="assigned_users_label">משתמשים משויכים:</string>
 
+    <string name="action_apply">אשר</string>
+    <string name="action_reapply">אשר מחדש</string>
+
     <string name="common_close">סגור</string>
     <string name="manage_button">ניהול</string>
 
@@ -108,6 +111,15 @@
     <string name="number_of_candidates_range">מספר מועמדים (%1$d..%2$d)</string>
 
     <string name="add_activity_attach_team">שייך מחלקה למשימה</string>
+    <string name="label_fill">תמלא</string>
+    <string name="assignment_label_team">קבוצה </string>
+
+    <string name="assignment_time_split"> חלוקת הזמן (בדקות)</string>
+
+    <string name="assignment_label_TimeSplit_2">כדי להשתמש במצב חלוקת זמן, עליך קודם להקצות את כל המשתמשים הנדרשים. </string>
+
+
+
 
 
     <string name="create_activity_title">יצרית פעילות חדשה </string>

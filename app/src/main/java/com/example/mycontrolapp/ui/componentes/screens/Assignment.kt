@@ -268,7 +268,7 @@ fun AssignmentScreen(
                     modifier = Modifier
                         .testTag("tabFill")
                         .semantics { contentDescription = "resourceId:tabFill" },
-                    text = { Text("Fill") }
+                    text = { Text(stringResource(R.string.label_fill)) }
                 )
                 Tab(
                     selected = mode == UserEditorMode.Edit,
@@ -276,7 +276,7 @@ fun AssignmentScreen(
                     modifier = Modifier
                         .testTag("tabEdit")
                         .semantics { contentDescription = "resourceId:tabEdit" },
-                    text = { Text("Edit") }
+                    text = { Text(stringResource(R.string.tab_edit)) }
                 )
             }
         }
@@ -315,7 +315,7 @@ fun AssignmentScreen(
                         value = valueLabel,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Team") },
+                        label = { Text((stringResource(R.string.assignment_label_team)) },
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(
                                 expanded = teamMenuExpanded
@@ -332,7 +332,7 @@ fun AssignmentScreen(
                         onDismissRequest = { teamMenuExpanded = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("All users") },
+                            text = { Text(stringResource(R.string.keyword_all_users)) },
                             onClick = {
                                 team = null
                                 teamMenuExpanded = false
@@ -342,7 +342,7 @@ fun AssignmentScreen(
                             .filter { it != Team.Unknown }
                             .forEach { t ->
                                 DropdownMenuItem(
-                                    text = { Text(t.name) }, // or stringResource(t.labelRes)
+                                    text = { Text(stringResource(t.labelRes)) }, // or stringResource(t.labelRes)
                                     onClick = {
                                         team = t
                                         teamMenuExpanded = false
@@ -352,13 +352,14 @@ fun AssignmentScreen(
                     }
                 }
             } else {
-                val teamText = team?.name ?: "All users"
+                val teamText =  team?.let { stringResource(it.labelRes) }
+                    ?: stringResource(R.string.keyword_all_users)
                 OutlinedTextField(
                     value = teamText,
                     onValueChange = {},
                     enabled = false,
                     readOnly = true,
-                    label = { Text("Team") },
+                    label = { Text(stringResource(R.string.assignment_label_team)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("txtActivityTeam")
@@ -434,7 +435,7 @@ fun AssignmentScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Time Split Mode in munites")
+                Text(text = stringResource(R.string.assignment_time_split))
                 Switch(
                     checked = timeSplitMode,
                     onCheckedChange = { checked ->
@@ -449,7 +450,7 @@ fun AssignmentScreen(
         if (!allSeatsFilled) {
             item {
                 Text(
-                    text = "To use Time Split Mode, you must assign all required users first.",
+                    text = stringResource(R.string.assignment_label_TimeSplit_2),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier
@@ -476,7 +477,7 @@ fun AssignmentScreen(
                             timeSplitText = newValue.filter { it.isDigit() }
                         },
                         enabled = enabledOptions,
-                        label = { Text("Time Split") },
+                        label = { Text(stringResource(R.string.assignment_time_split)) },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number
                         ),
@@ -502,7 +503,7 @@ fun AssignmentScreen(
                         },
                         enabled = enabledOptions && timeSplitText.isNotBlank()
                     ) {
-                        Text("Apply")
+                        Text(stringResource(R.string.action_apply))
                     }
                     if (savedTimeSplit?.segments?.isNotEmpty() == true) {
                         OutlinedButton(
@@ -528,7 +529,7 @@ fun AssignmentScreen(
                             },
                             enabled = enabledOptions
                         ) {
-                            Text("Re-apply saved")
+                            Text(stringResource(R.string.action_reapply))
                         }
                     }
                 }

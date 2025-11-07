@@ -33,6 +33,8 @@
     <string name="action_assign_ellipsis">Assign…</string>
     <string name="action_assign">Assign</string>
     <string name="action_delete">Delete</string>
+    <string name="action_apply">Apply</string>
+    <string name="action_reapply">Re-apply</string>
 
 
     <string name="common_back">Back</string>
@@ -75,6 +77,7 @@
     <string name="label_last_name">Last Name</string>
     <string name="label_skills_prefs">Skills / Preferences (comma separated)</string>
     <string name="label_can_fill_any_role">Can fill any role</string>
+    <string name="label_fill">Fill</string>
 
     <string name="label_professions_multi">Professions (multi-select)</string>
     <string name="label_professions">Professions</string>
@@ -155,7 +158,17 @@
     <string name="team_RETK">RETK</string>
     <string name="team_CommandPost">Command Post</string>
     <string name="team_YANIR">YANIR </string>
-    <string name="team_Unknown">Unknown Team // All Team </string>
+    <string name="team_Unknown">Unknown Team // All Team</string>
+
+    <string name="assignment_time_split">Time split interval (minutes)</string>
+    <string name="assignment_label_team">Team </string>
+
+    <string name="assignment_label_TimeSplit_2">To use Time Split Mode, you must assign all required users first. </string>
+
+
+
+
+
 
 
     <string name="no_users_available">No users available</string>
