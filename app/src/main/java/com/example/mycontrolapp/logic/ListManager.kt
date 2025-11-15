@@ -70,6 +70,9 @@ interface ListManager {
 
     suspend fun clearTimeSplitState(activityId: String)
 
+
+    suspend fun syncOnceIfRemoteEnabled(): Boolean = false
+
 }
 
 

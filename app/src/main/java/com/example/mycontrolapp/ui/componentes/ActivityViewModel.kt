@@ -36,6 +36,12 @@ class ActivityViewModel @Inject constructor(
     private val listManager: ListManager
 ) : ViewModel() {
 
+    init {
+        viewModelScope.launch {
+            listManager.syncOnceIfRemoteEnabled()
+        }
+    }
+
     private val sharing = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000)
 
     /* ---------------------------- UI filters ---------------------------- */

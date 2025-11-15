@@ -17,7 +17,7 @@ import com.example.mycontrolapp.logic.dao.UserProfessionDao
         ActivityRoleRequirement::class,
         UserProfession::class,
         ActivityTimeSplit::class],
-    version = 21,
+    version = 24,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -27,7 +27,7 @@ abstract class AppDb : RoomDatabase() {
     abstract fun assignmentDao(): AssignmentDao
     abstract fun userProfessionDao(): UserProfessionDao
     abstract fun activityRoleRequirementDao(): ActivityRoleRequirementDao
-    abstract fun  ActivityTimeSplitDao(): ActivityTimeSplitDao
+    abstract fun  activityTimeSplitDao(): ActivityTimeSplitDao
 
 
 }

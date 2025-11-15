@@ -1,5 +1,7 @@
 package com.example.mycontrolapp.logic.sharedData
 import com.example.mycontrolapp.logic.sharedEnums.Profession
+import com.google.firebase.firestore.IgnoreExtraProperties
+import kotlinx.serialization.Serializable
 
 data class AssignedCountRow(
     val activityId: String,
@@ -16,11 +18,14 @@ data class RoleNeed(
     val seatIndex: Int
 )
 
+@IgnoreExtraProperties
 data class TimeSegment(
-    val userId: String,
-    val start: Long,
-    val end: Long
-)
+    var userId: String = "",
+    var start: Long = 0L,
+    var end: Long = 0L
+) {
+    constructor() : this("", 0L, 0L)
+}
 
 data class TimeSplitUiState(
     val enabled: Boolean = false,

@@ -11,7 +11,7 @@ import kotlinx.coroutines.withContext
 
 @Singleton
 class ListManagerRoom @Inject constructor(
-    private val db: AppDb
+    val db: AppDb
 ) : ListManager {
 
     /* -------------------- Activities -------------------- */
@@ -151,14 +151,14 @@ class ListManagerRoom @Inject constructor(
     }
 
     override fun timeSplitState(activityId: String): Flow<ActivityTimeSplit?> =
-        db.ActivityTimeSplitDao().observe(activityId)
+        db.activityTimeSplitDao().observe(activityId)
 
     override suspend fun saveTimeSplitState(
         activityId: String,
         segments: List<TimeSegment>,
         splitMinutes: Int
     ) {
-        db.ActivityTimeSplitDao().upsert(
+        db.activityTimeSplitDao().upsert(
             ActivityTimeSplit(
                 activityId = activityId,
                 splitMinutes = splitMinutes,
@@ -167,7 +167,7 @@ class ListManagerRoom @Inject constructor(
         )
     }
     override suspend fun clearTimeSplitState(activityId: String) {
-        db.ActivityTimeSplitDao().clear(activityId)
+        db.activityTimeSplitDao().deleteByActivityId(activityId)
     }
     override suspend fun deleteAllRequirementsForActivity(activityId: String) {
         db.activityRoleRequirementDao().deleteAllForActivity(activityId)

@@ -1,5 +1,5 @@
 package com.example.mycontrolapp.logic
-
+import com.example.mycontrolapp.logic.dao.ActivityRoleRequirementDao
 import com.example.mycontrolapp.logic.sharedEnums.Profession
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
@@ -17,6 +17,8 @@ class FirebaseDataSource @Inject constructor(
     private val assignments get() = fs.collection("assignments")
     private val requirements get() = fs.collection("activity_role_requirements")
     private val userProfessions get() = fs.collection("user_professions")
+    private val activityTimeSplit get() = fs.collection("activity_time_split")
+
 
     // ---------- Pull everything for one-shot sync ----------
     suspend fun pullAll(): RemoteSnapshot = RemoteSnapshot(
@@ -25,6 +27,7 @@ class FirebaseDataSource @Inject constructor(
         assignments = assignments.get().await().toObjects(Assignment::class.java),
         requirements = requirements.get().await().toObjects(ActivityRoleRequirement::class.java),
         userProfessions = userProfessions.get().await().toObjects(UserProfession::class.java),
+        activityTimeSplit = activityTimeSplit.get().await().toObjects(ActivityTimeSplit::class.java)
     )
 
     data class RemoteSnapshot(
@@ -33,6 +36,7 @@ class FirebaseDataSource @Inject constructor(
         val assignments: List<Assignment>,
         val requirements: List<ActivityRoleRequirement>,
         val userProfessions: List<UserProfession>,
+        val activityTimeSplit:List<ActivityTimeSplit>
     )
 
     // ---------- Upserts / deletes to mirror Room mutations ----------
@@ -80,5 +84,12 @@ class FirebaseDataSource @Inject constructor(
             val id = "${userId}_${p.name}"
             userProfessions.document(id).set(UserProfession(userId = userId, profession = p)).await()
         }
+    }
+
+    suspend fun replaceActivityTimeSplit(row: ActivityTimeSplit) {
+        activityTimeSplit.document(row.activityId).set(row).await() // full replace
+    }
+    suspend fun deleteActivityTimeSplit(activityId: String) {
+        activityTimeSplit.document(activityId).delete().await()
     }
 }

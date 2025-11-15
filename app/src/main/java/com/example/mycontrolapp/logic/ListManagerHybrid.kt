@@ -23,7 +23,7 @@ class ListManagerHybrid @Inject constructor(
      * Won't even construct Firebase on emulator/debug when remoteEnabled == false.
      */
     suspend fun syncOnceWithTimeout(timeoutMs: Long = 10_000): Boolean {
-        if (!remoteEnabled) return false
+       if (!remoteEnabled) return false
         val remote = remoteLazy.get()
         return withTimeoutOrNull(timeoutMs) {
             val snap = remote.pullAll()
@@ -33,18 +33,23 @@ class ListManagerHybrid @Inject constructor(
                     snap.activities.forEach { db.activityDao().upsert(it) }
                     // Users
                     snap.users.forEach { db.userDao().upsert(it) }
-
                     // Assignments (replace)
-                    db.assignmentDao().deleteAll()               // ensure DAO has this
+                    db.assignmentDao().deleteAll()
                     snap.assignments.forEach { db.assignmentDao().insert(it) }
 
                     // Requirements (replace)
-                    db.activityRoleRequirementDao().deleteAll()  // ensure DAO has this
+                    db.activityRoleRequirementDao().deleteAll()
                     db.activityRoleRequirementDao().upsertAll(snap.requirements)
 
                     // User professions (replace)
-                    db.userProfessionDao().deleteAll()           // ensure DAO has this
+                    db.userProfessionDao().deleteAll()
                     db.userProfessionDao().insertAll(snap.userProfessions)
+
+                    // Time-Split (replace)
+                    db.activityTimeSplitDao().deleteAll()
+                    if (snap.activityTimeSplit.isNotEmpty()) {
+                        db.activityTimeSplitDao().upsertAll(snap.activityTimeSplit)
+                    }
                 }
             }
             true
@@ -66,7 +71,11 @@ class ListManagerHybrid @Inject constructor(
 
     override suspend fun removeActivity(id: String) {
         room.removeActivity(id)
-        if (remoteEnabled) runCatching { remoteLazy.get().deleteActivity(id) }
+        if (remoteEnabled) runCatching {
+            val remote = remoteLazy.get()
+            remote.deleteActivity(id)
+            remote.deleteActivityTimeSplit(id)
+        }
     }
 
     override suspend fun addUser(user: User) {
@@ -121,6 +130,22 @@ class ListManagerHybrid @Inject constructor(
         room.replaceUserProfessions(userId, professions)
         if (remoteEnabled) runCatching { remoteLazy.get().replaceUserProfessions(userId, professions) }
 
-
     }
+
+    suspend fun replaceTimeSplitForActivity(activityId: String, row: ActivityTimeSplit) {
+        room.db.withTransaction {
+            room.db.activityTimeSplitDao().deleteByActivityId(activityId)
+            room.db.activityTimeSplitDao().upsert(row)
+        }
+        if (remoteEnabled) runCatching { remoteLazy.get().replaceActivityTimeSplit(row) }
+    }
+
+    suspend fun clearTimeSplitForActivity(activityId: String) {
+        room.db.activityTimeSplitDao().deleteByActivityId(activityId)
+        if (remoteEnabled) runCatching { remoteLazy.get().deleteActivityTimeSplit(activityId) }
+    }
+
+    override suspend fun syncOnceIfRemoteEnabled(): Boolean =
+
+        if (remoteEnabled) syncOnceWithTimeout() else false
 }
