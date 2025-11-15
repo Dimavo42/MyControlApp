@@ -32,6 +32,7 @@ fun CandidatesInput(
     onValueChange: (Int) -> Unit,
     min: Int = 0,
     max: Int = 10,
+    modifier: Modifier = Modifier,
     testTagPrefix: String = "candidates",
     initialUseSlider: Boolean = true,
 ) {

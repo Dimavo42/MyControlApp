@@ -194,6 +194,7 @@ fun AssignmentScreen(
     var timeSplitSegments by remember(activity.id) {
         mutableStateOf<List<TimeSegment>>(emptyList())
     }
+    var showTimeSplitAssignments by rememberSaveable { mutableStateOf(true) }
 
     val savedTimeSplit by remember(activityId) {
         viewModel.timeSplitState(activityId)
@@ -228,6 +229,7 @@ fun AssignmentScreen(
     fun selectionKey(n: RoleNeed) = "${n.profession.name}#${n.seatIndex}"
     val zoneId = remember { ZoneId.systemDefault() }
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
+
 
 
     /* ---------------------------------- UI ---------------------------------- */
@@ -315,7 +317,7 @@ fun AssignmentScreen(
                         value = valueLabel,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text((stringResource(R.string.assignment_label_team)) },
+                        label = { Text(stringResource(R.string.assignment_label_team)) },
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(
                                 expanded = teamMenuExpanded
@@ -462,8 +464,11 @@ fun AssignmentScreen(
 
         // Time Split controls
         if (timeSplitMode) {
+            val hasSavedState = savedTimeSplit?.segments?.isNotEmpty() == true
+
             item {
                 val enabledOptions = allSeatsFilled
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -483,6 +488,8 @@ fun AssignmentScreen(
                         ),
                         modifier = Modifier.weight(1f)
                     )
+
+                    // First "Apply" – only when we DON'T have saved state
                     Button(
                         onClick = {
                             val minutes = timeSplitText.toIntOrNull() ?: return@Button
@@ -492,40 +499,44 @@ fun AssignmentScreen(
                                 splitSizeMinutes = minutes,
                                 unassignedUsers = participantsForTimeSplit
                             )
-                            // Update UI
                             timeSplitSegments = segments
-                            // Save for next time
                             viewModel.saveTimeSplitState(
                                 activityId = activity.id,
                                 segments = segments,
                                 splitMinutes = minutes
                             )
                         },
-                        enabled = enabledOptions && timeSplitText.isNotBlank()
+                        enabled = enabledOptions &&
+                                timeSplitText.isNotBlank() &&
+                                !hasSavedState
                     ) {
                         Text(stringResource(R.string.action_apply))
                     }
-                    if (savedTimeSplit?.segments?.isNotEmpty() == true) {
+
+                    // "Reapply" – only when there IS saved state
+                    if (hasSavedState) {
                         OutlinedButton(
                             onClick = {
-                                savedTimeSplit?.let { state ->
-                                    val minutes = state.splitMinutes
-                                    timeSplitText = minutes.toString()
+                                // use current text if valid, otherwise fall back to saved minutes
+                                val minutes = timeSplitText.toIntOrNull()
+                                    ?: savedTimeSplit?.splitMinutes
+                                    ?: return@OutlinedButton
 
-                                    val segments = buildTimeSplitAssignments(
-                                        startTime = computed.startAtMillis!!,
-                                        endTime = computed.endAtMillis!!,
-                                        splitSizeMinutes = minutes,
-                                        unassignedUsers = participantsForTimeSplit
-                                    )
+                                timeSplitText = minutes.toString()
 
-                                    timeSplitSegments = segments
-                                    viewModel.saveTimeSplitState(
-                                        activityId = activity.id,
-                                        segments = segments,
-                                        splitMinutes = minutes
-                                    )
-                                }
+                                val segments = buildTimeSplitAssignments(
+                                    startTime = computed.startAtMillis!!,
+                                    endTime = computed.endAtMillis!!,
+                                    splitSizeMinutes = minutes,
+                                    unassignedUsers = participantsForTimeSplit
+                                )
+
+                                timeSplitSegments = segments
+                                viewModel.saveTimeSplitState(
+                                    activityId = activity.id,
+                                    segments = segments,
+                                    splitMinutes = minutes
+                                )
                             },
                             enabled = enabledOptions
                         ) {
@@ -634,40 +645,61 @@ fun AssignmentScreen(
         // ------------------ Time split result cards ------------------
         if (timeSplitMode && timeSplitSegments.isNotEmpty()) {
 
+            // Header + toggle
             item {
-                Text(
-                    text = "Time Split Assignments",
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier
-                        .padding(top = 8.dp)
-                        .testTag("lblTimeSplitAssignments")
-                )
-            }
-            items(
-                items = timeSplitSegments,
-                key = { seg -> seg.hashCode() }
-            ) { seg ->
-                val start = Instant.ofEpochMilli(seg.start)
-                    .atZone(zoneId)
-                    .toLocalTime()
-                val end = Instant.ofEpochMilli(seg.end)
-                    .atZone(zoneId)
-                    .toLocalTime()
-                val userName = usersById[seg.userId]?.name ?: "Unassigned"
-                ElevatedCard(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                        .testTag("cardTimeSegment_${seg.hashCode()}")
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    ListItem(
-                        headlineContent = {
-                            Text(userName)
-                        },
-                        supportingContent = {
-                            Text("${start.format(timeFormatter)} - ${end.format(timeFormatter)}")
-                        }
+                    Text(
+                        text = "Time Split Assignments",
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.testTag("lblTimeSplitAssignments")
                     )
+
+                    TextButton(
+                        onClick = { showTimeSplitAssignments = !showTimeSplitAssignments },
+                        modifier = Modifier.testTag("btnToggleTimeSplitAssignments")
+                    ) {
+                        Text(
+                            if (showTimeSplitAssignments)
+                                "Hide"
+                            else
+                                "Show"
+                        )
+                    }
+                }
+            }
+            // Only show the cards when toggle is ON
+            if (showTimeSplitAssignments) {
+                items(
+                    items = timeSplitSegments,
+                    key = { seg -> seg.hashCode() }
+                ) { seg ->
+                    val start = Instant.ofEpochMilli(seg.start)
+                        .atZone(zoneId)
+                        .toLocalTime()
+                    val end = Instant.ofEpochMilli(seg.end)
+                        .atZone(zoneId)
+                        .toLocalTime()
+                    val userName = usersById[seg.userId]?.name ?: "Unassigned"
+
+                    ElevatedCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .testTag("cardTimeSegment_${seg.hashCode()}")
+                    ) {
+                        ListItem(
+                            headlineContent = { Text(userName) },
+                            supportingContent = {
+                                Text("${start.format(timeFormatter)} - ${end.format(timeFormatter)}")
+                            }
+                        )
+                    }
                 }
             }
         }
