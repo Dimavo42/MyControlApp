@@ -302,8 +302,8 @@ fun AssignmentScreen(
         item {
             if (mode == UserEditorMode.Edit) {
                 val valueLabel = team?.let { t ->
-                    t.name // or stringResource(t.labelRes)
-                } ?: "All users"
+                    stringResource(t.labelRes)
+                } ?: stringResource(R.string.keyword_all_users)
 
                 ExposedDropdownMenuBox(
                     expanded = teamMenuExpanded,
@@ -344,7 +344,7 @@ fun AssignmentScreen(
                             .filter { it != Team.Unknown }
                             .forEach { t ->
                                 DropdownMenuItem(
-                                    text = { Text(stringResource(t.labelRes)) }, // or stringResource(t.labelRes)
+                                    text = { Text(stringResource(t.labelRes)) },
                                     onClick = {
                                         team = t
                                         teamMenuExpanded = false
@@ -354,7 +354,7 @@ fun AssignmentScreen(
                     }
                 }
             } else {
-                val teamText =  team?.let { stringResource(it.labelRes) }
+                val teamText = team?.let { stringResource(it.labelRes) }
                     ?: stringResource(R.string.keyword_all_users)
                 OutlinedTextField(
                     value = teamText,
@@ -399,13 +399,29 @@ fun AssignmentScreen(
                     Button(
                         enabled = canSave,
                         onClick = {
-                            val updated: Activity = activity.copy(
+                            val updated = activity.copy(
                                 name = name.trim(),
                                 startAt = computed.startAtMillis!!,
                                 endAt = computed.endAtMillis!!,
                                 dateEpochDay = computed.dateEpochDay!!,
                                 team = team
                             )
+
+                            val hasActivityChanged =
+                                updated.startAt != activity.startAt ||
+                                        updated.endAt != activity.endAt ||
+                                        updated.dateEpochDay != activity.dateEpochDay ||
+                                        updated.team != activity.team
+
+                            if (hasActivityChanged && assignmentsForActivity.isNotEmpty()) {
+                                assignmentsForActivity.forEach { asg ->
+                                    viewModel.unassignUser(asg.activityId, asg.userId)
+                                }
+                                viewModel.clearTimeSplitState(activity.id)
+                                timeSplitSegments = emptyList()
+                                timeSplitMode = false
+                            }
+
                             viewModel.updateActivity(updated)
                             mode = UserEditorMode.Fill
                         },
@@ -418,119 +434,88 @@ fun AssignmentScreen(
         }
 
         // ------------------ Needed assignments ------------------
-        item {
-            Text(
-                stringResource(R.string.title_needed_assignments),
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier
-                    .testTag("lblNeededAssignments")
-                    .semantics { contentDescription = "resourceId:lblNeededAssignments" }
-            )
-        }
-
-        // Time Split Mode switch
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = stringResource(R.string.assignment_time_split))
-                Switch(
-                    checked = timeSplitMode,
-                    onCheckedChange = { checked ->
-                        if (allSeatsFilled) {
-                            timeSplitMode = checked
-                        }
-                    },
-                    enabled = allSeatsFilled
-                )
-            }
-        }
-        if (!allSeatsFilled) {
+        if (mode == UserEditorMode.Fill) {
             item {
                 Text(
-                    text = stringResource(R.string.assignment_label_TimeSplit_2),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
+                    stringResource(R.string.title_needed_assignments),
+                    style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
+                        .testTag("lblNeededAssignments")
+                        .semantics { contentDescription = "resourceId:lblNeededAssignments" }
                 )
             }
-        }
 
-        // Time Split controls
-        if (timeSplitMode) {
-            val hasSavedState = savedTimeSplit?.segments?.isNotEmpty() == true
-
+            // Time Split Mode switch
             item {
-                val enabledOptions = allSeatsFilled
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedTextField(
-                        value = timeSplitText,
-                        onValueChange = { newValue ->
-                            timeSplitText = newValue.filter { it.isDigit() }
+                    Text(text = stringResource(R.string.assignment_time_split))
+                    Switch(
+                        checked = timeSplitMode,
+                        onCheckedChange = { checked ->
+                            if (allSeatsFilled) {
+                                timeSplitMode = checked
+                            }
                         },
-                        enabled = enabledOptions,
-                        label = { Text(stringResource(R.string.assignment_time_split)) },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number
-                        ),
-                        modifier = Modifier.weight(1f)
+                        enabled = allSeatsFilled
                     )
+                }
+            }
+            if (!allSeatsFilled) {
+                item {
+                    Text(
+                        text = stringResource(R.string.assignment_label_TimeSplit_2),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                    )
+                }
+            }
 
-                    // First "Apply" – only when we DON'T have saved state
-                    Button(
-                        onClick = {
-                            val minutes = timeSplitText.toIntOrNull() ?: return@Button
-                            val segments = buildTimeSplitAssignments(
-                                startTime = computed.startAtMillis!!,
-                                endTime = computed.endAtMillis!!,
-                                splitSizeMinutes = minutes,
-                                unassignedUsers = participantsForTimeSplit
-                            )
-                            timeSplitSegments = segments
-                            viewModel.saveTimeSplitState(
-                                activityId = activity.id,
-                                segments = segments,
-                                splitMinutes = minutes
-                            )
-                        },
-                        enabled = enabledOptions &&
-                                timeSplitText.isNotBlank() &&
-                                !hasSavedState
+            // Time Split controls
+            if (timeSplitMode) {
+                val hasSavedState = savedTimeSplit?.segments?.isNotEmpty() == true
+
+                item {
+                    val enabledOptions = allSeatsFilled
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(stringResource(R.string.action_apply))
-                    }
+                        OutlinedTextField(
+                            value = timeSplitText,
+                            onValueChange = { newValue ->
+                                timeSplitText = newValue.filter { it.isDigit() }
+                            },
+                            enabled = enabledOptions,
+                            label = { Text(stringResource(R.string.assignment_time_split)) },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
 
-                    // "Reapply" – only when there IS saved state
-                    if (hasSavedState) {
-                        OutlinedButton(
+                        // First "Apply" – only when we DON'T have saved state
+                        Button(
                             onClick = {
-                                // use current text if valid, otherwise fall back to saved minutes
-                                val minutes = timeSplitText.toIntOrNull()
-                                    ?: savedTimeSplit?.splitMinutes
-                                    ?: return@OutlinedButton
-
-                                timeSplitText = minutes.toString()
-
+                                val minutes = timeSplitText.toIntOrNull() ?: return@Button
                                 val segments = buildTimeSplitAssignments(
                                     startTime = computed.startAtMillis!!,
                                     endTime = computed.endAtMillis!!,
                                     splitSizeMinutes = minutes,
                                     unassignedUsers = participantsForTimeSplit
                                 )
-
                                 timeSplitSegments = segments
                                 viewModel.saveTimeSplitState(
                                     activityId = activity.id,
@@ -538,219 +523,259 @@ fun AssignmentScreen(
                                     splitMinutes = minutes
                                 )
                             },
-                            enabled = enabledOptions
+                            enabled = enabledOptions &&
+                                    timeSplitText.isNotBlank() &&
+                                    !hasSavedState
                         ) {
-                            Text(stringResource(R.string.action_reapply))
+                            Text(stringResource(R.string.action_apply))
+                        }
+
+                        // "Reapply" – only when there IS saved state
+                        if (hasSavedState) {
+                            OutlinedButton(
+                                onClick = {
+                                    // use current text if valid, otherwise fall back to saved minutes
+                                    val minutes = timeSplitText.toIntOrNull()
+                                        ?: savedTimeSplit?.splitMinutes
+                                        ?: return@OutlinedButton
+
+                                    timeSplitText = minutes.toString()
+
+                                    val segments = buildTimeSplitAssignments(
+                                        startTime = computed.startAtMillis!!,
+                                        endTime = computed.endAtMillis!!,
+                                        splitSizeMinutes = minutes,
+                                        unassignedUsers = participantsForTimeSplit
+                                    )
+
+                                    timeSplitSegments = segments
+                                    viewModel.saveTimeSplitState(
+                                        activityId = activity.id,
+                                        segments = segments,
+                                        splitMinutes = minutes
+                                    )
+                                },
+                                enabled = enabledOptions
+                            ) {
+                                Text(stringResource(R.string.action_reapply))
+                            }
                         }
                     }
                 }
             }
-        }
 
-        if (neededSeats.isEmpty()) {
-            item {
-                Text(
-                    stringResource(R.string.msg_all_roles_full),
-                    modifier = Modifier
-                        .testTag("txtNoNeeds")
-                        .semantics { contentDescription = "resourceId:txtNoNeeds" }
-                )
-            }
-        } else {
-            items(
-                items = neededSeats,
-                key = { need -> "need_${need.profession.name}_${need.seatIndex}" }
-            ) { need ->
-                val opts = optionsFor()
-                val hasOptions = opts.isNotEmpty()
-                val key = selectionKey(need)
-                val selectedId = pending[key]
-                AssignmentRow(
-                    profession = need.profession,
-                    options = opts,
-                    selectedUserId = selectedId,
-                    onSelect = { u ->
-                        pending = pending.toMutableMap().apply { put(key, u?.id) }
-                    },
-                    onAssign = {
-                        val uid = selectedId ?: return@AssignmentRow
-                        viewModel.assignUser(
-                            activityId = activity.id,
-                            userId = uid,
-                            profession = need.profession
-                        )
-                        // Clear selection for this slot; flows will update and this row will disappear
-                        pending = pending.toMutableMap().apply { remove(key) }
-                    },
-                    enabled = hasOptions && selectedId != null
-                )
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 5.dp)
-                )
-            }
-        }
-
-        // ------------------ Existing assignments ------------------
-        item {
-            Text(
-                stringResource(R.string.title_existing_assignments),
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier
-                    .testTag("lblExistingAssignments")
-                    .semantics { contentDescription = "resourceId:lblExistingAssignments" }
-            )
-        }
-
-        if (assignmentsForActivity.isEmpty()) {
-            item {
-                Text(
-                    stringResource(R.string.msg_no_assignments_yet),
-                    modifier = Modifier
-                        .testTag("txtNoAssignments")
-                        .semantics { contentDescription = "resourceId:txtNoAssignments" }
-                )
-            }
-        } else {
-            items(
-                items = assignmentsForActivity,
-                key = { it.id }
-            ) { asg ->
-                val user = usersById[asg.userId]
-                ElevatedCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("cardAssignment_${asg.id}")
-                        .semantics {
-                            contentDescription = "resourceId:cardAssignment_${asg.id}"
-                        }
-                ) {
-                    ListItem(
-                        headlineContent = {
-                            Text(
-                                user?.name ?: stringResource(R.string.unknown_user)
-                            )
-                        },
-                        supportingContent = { Text(stringResource(asg.role.labelRes)) },
-                        trailingContent = {
-                            TextButton(
-                                onClick = { viewModel.unassignUser(activityId, asg.userId) }
-                            ) { Text(stringResource(R.string.action_unassign)) }
-                        }
-                    )
-                }
-            }
-        }
-
-        // ------------------ Time split result cards ------------------
-        if (timeSplitMode && timeSplitSegments.isNotEmpty()) {
-
-            // Header + toggle
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+            if (neededSeats.isEmpty()) {
+                item {
                     Text(
-                        text = "Time Split Assignments",
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.testTag("lblTimeSplitAssignments")
+                        stringResource(R.string.msg_all_roles_full),
+                        modifier = Modifier
+                            .testTag("txtNoNeeds")
+                            .semantics { contentDescription = "resourceId:txtNoNeeds" }
+                    )
+                }
+            } else {
+                items(
+                    items = neededSeats,
+                    key = { need -> "need_${need.profession.name}_${need.seatIndex}" }
+                ) { need ->
+                    val opts = optionsFor()
+                    val hasOptions = opts.isNotEmpty()
+                    val key = selectionKey(need)
+                    val selectedId = pending[key]
+                    AssignmentRow(
+                        profession = need.profession,
+                        options = opts,
+                        selectedUserId = selectedId,
+                        onSelect = { u ->
+                            pending = pending.toMutableMap().apply { put(key, u?.id) }
+                        },
+                        onAssign = {
+                            val uid = selectedId ?: return@AssignmentRow
+                            viewModel.assignUser(
+                                activityId = activity.id,
+                                userId = uid,
+                                profession = need.profession
+                            )
+                            // Clear selection for this slot; flows will update and this row will disappear
+                            pending = pending.toMutableMap().apply { remove(key) }
+                        },
+                        enabled = hasOptions && selectedId != null
                     )
 
-                    TextButton(
-                        onClick = { showTimeSplitAssignments = !showTimeSplitAssignments },
-                        modifier = Modifier.testTag("btnToggleTimeSplitAssignments")
-                    ) {
-                        Text(
-                            if (showTimeSplitAssignments)
-                                "Hide"
-                            else
-                                "Show"
-                        )
-                    }
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 5.dp)
+                    )
                 }
             }
-            // Only show the cards when toggle is ON
-            if (showTimeSplitAssignments) {
-                items(
-                    items = timeSplitSegments,
-                    key = { seg -> seg.hashCode() }
-                ) { seg ->
-                    val start = Instant.ofEpochMilli(seg.start)
-                        .atZone(zoneId)
-                        .toLocalTime()
-                    val end = Instant.ofEpochMilli(seg.end)
-                        .atZone(zoneId)
-                        .toLocalTime()
-                    val userName = usersById[seg.userId]?.name ?: "Unassigned"
 
+            // ------------------ Existing assignments ------------------
+            item {
+                Text(
+                    stringResource(R.string.title_existing_assignments),
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier
+                        .testTag("lblExistingAssignments")
+                        .semantics { contentDescription = "resourceId:lblExistingAssignments" }
+                )
+            }
+
+            if (assignmentsForActivity.isEmpty()) {
+                item {
+                    Text(
+                        stringResource(R.string.msg_no_assignments_yet),
+                        modifier = Modifier
+                            .testTag("txtNoAssignments")
+                            .semantics { contentDescription = "resourceId:txtNoAssignments" }
+                    )
+                }
+            } else {
+                items(
+                    items = assignmentsForActivity,
+                    key = { it.id }
+                ) { asg ->
+                    val user = usersById[asg.userId]
                     ElevatedCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .testTag("cardTimeSegment_${seg.hashCode()}")
+                            .testTag("cardAssignment_${asg.id}")
+                            .semantics {
+                                contentDescription = "resourceId:cardAssignment_${asg.id}"
+                            }
                     ) {
                         ListItem(
-                            headlineContent = { Text(userName) },
-                            supportingContent = {
-                                Text("${start.format(timeFormatter)} - ${end.format(timeFormatter)}")
+                            headlineContent = {
+                                Text(
+                                    user?.name ?: stringResource(R.string.unknown_user)
+                                )
+                            },
+                            supportingContent = { Text(stringResource(asg.role.labelRes)) },
+                            trailingContent = {
+                                TextButton(
+                                    onClick = { viewModel.unassignUser(activityId, asg.userId) }
+                                ) { Text(stringResource(R.string.action_unassign)) }
                             }
                         )
                     }
                 }
             }
-        }
 
-        // ------------------ Bottom actions ------------------
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    enabled = allSeatsFilled,
-                    onClick = { navController.navigate(AppDestinations.Home) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2E7D32),
-                        contentColor = Color.White
-                    ),
-                    modifier = Modifier
-                        .testTag("btnBack")
-                ) { Text("Save") }
-                if (allSeatsFilled) {
-                    Button(
-                        onClick = { navController.popBackStack() },
+            // ------------------ Time split result cards ------------------
+            if (timeSplitMode && timeSplitSegments.isNotEmpty()) {
+
+                // Header + toggle
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Time Split Assignments",
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.testTag("lblTimeSplitAssignments")
+                        )
+
+                        TextButton(
+                            onClick = { showTimeSplitAssignments = !showTimeSplitAssignments },
+                            modifier = Modifier.testTag("btnToggleTimeSplitAssignments")
+                        ) {
+                            Text(
+                                if (showTimeSplitAssignments)
+                                    "Hide"
+                                else
+                                    "Show"
+                            )
+                        }
+                    }
+                }
+                // Only show the cards when toggle is ON
+                if (showTimeSplitAssignments) {
+                    items(
+                        items = timeSplitSegments,
+                        key = { seg -> seg.hashCode() }
+                    ) { seg ->
+                        val start = Instant.ofEpochMilli(seg.start)
+                            .atZone(zoneId)
+                            .toLocalTime()
+                        val end = Instant.ofEpochMilli(seg.end)
+                            .atZone(zoneId)
+                            .toLocalTime()
+                        val userName = usersById[seg.userId]?.name ?: "Unassigned"
+
+                        ElevatedCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .testTag("cardTimeSegment_${seg.hashCode()}")
+                        ) {
+                            ListItem(
+                                headlineContent = { Text(userName) },
+                                supportingContent = {
+                                    Text(
+                                        "${start.format(timeFormatter)} - ${
+                                            end.format(
+                                                timeFormatter
+                                            )
+                                        }"
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+
+            // ------------------ Bottom actions ------------------
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        enabled = allSeatsFilled,
+                        onClick = { navController.navigate(AppDestinations.Home) },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF2E7D32),
                             contentColor = Color.White
                         ),
                         modifier = Modifier
                             .testTag("btnBack")
-                            .semantics { contentDescription = "resourceId:btnBack" }
-                    ) { Text(stringResource(R.string.common_back)) }
-                } else {
-                    OutlinedButton(
-                        onClick = { navController.popBackStack() },
-                        modifier = Modifier
-                            .testTag("btnBack")
-                            .semantics { contentDescription = "resourceId:btnBack" }
-                    ) { Text(stringResource(R.string.common_back)) }
-                }
+                    ) { Text("Save") }
+                    if (allSeatsFilled) {
+                        Button(
+                            onClick = { navController.popBackStack() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF2E7D32),
+                                contentColor = Color.White
+                            ),
+                            modifier = Modifier
+                                .testTag("btnBack")
+                                .semantics { contentDescription = "resourceId:btnBack" }
+                        ) { Text(stringResource(R.string.common_back)) }
+                    } else {
+                        OutlinedButton(
+                            onClick = { navController.popBackStack() },
+                            modifier = Modifier
+                                .testTag("btnBack")
+                                .semantics { contentDescription = "resourceId:btnBack" }
+                        ) { Text(stringResource(R.string.common_back)) }
+                    }
 
-                OutlinedButton(
-                    onClick = {
-                        timeSplitSegments = emptyList()
-                        timeSplitText = ""
-                        timeSplitMode = false
-                        viewModel.clearTimeSplitState(activity.id)
-                    },
-                    modifier = Modifier
-                        .testTag("btnResetTimeSplit")
-                ) {
-                    Text("Reset Time Split")
+                    OutlinedButton(
+                        onClick = {
+                            timeSplitSegments = emptyList()
+                            timeSplitText = ""
+                            timeSplitMode = false
+                            viewModel.clearTimeSplitState(activity.id)
+                        },
+                        modifier = Modifier
+                            .testTag("btnResetTimeSplit")
+                    ) {
+                        Text("Reset Time Split")
+                    }
                 }
             }
         }
