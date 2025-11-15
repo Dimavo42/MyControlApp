@@ -5,7 +5,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.mycontrolapp.logic.Activity
 import com.example.mycontrolapp.logic.User
@@ -13,8 +12,8 @@ import com.example.mycontrolapp.logic.sharedEnums.Team
 import com.example.mycontrolapp.ui.componentes.ActivityViewModel
 import com.example.mycontrolapp.ui.componentes.DateFilterWithShow
 import com.example.mycontrolapp.ui.componentes.custom.CalendarView
-import com.example.mycontrolapp.ui.componentes.custom.LazyAlertDialogButton
 import java.time.YearMonth
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 
 

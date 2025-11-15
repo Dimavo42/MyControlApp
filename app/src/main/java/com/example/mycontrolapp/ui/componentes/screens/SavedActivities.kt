@@ -12,7 +12,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.mycontrolapp.ui.componentes.ActivityViewModel
 import com.example.mycontrolapp.ui.componentes.DateFilterWithShow
@@ -21,6 +20,7 @@ import com.example.mycontrolapp.R
 import com.example.mycontrolapp.logic.sharedEnums.Team
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @SuppressLint("LocalContextConfigurationRead")
 @OptIn(ExperimentalMaterial3Api::class)

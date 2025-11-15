@@ -14,7 +14,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
@@ -32,6 +31,8 @@ import java.time.format.DateTimeFormatter
 import com.example.mycontrolapp.R
 import com.example.mycontrolapp.logic.sharedEnums.Team
 import kotlinx.coroutines.launch
+import androidx.hilt.navigation.compose.hiltViewModel
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
