@@ -142,11 +142,6 @@ class ActivityViewModel @Inject constructor(
             }
         }.stateIn(viewModelScope, sharing, emptyMap())
 
-    /** Convenience if you want a Flow per activity *from the map* (still cheap). */
-    fun countersFor(activityId: String): Flow<Counters> =
-        activityCountersFlow
-            .map { it[activityId] ?: Counters(0, 0) }
-            .distinctUntilChanged()
 
     /* ------------------------------- Mutations ----------------------------- */
 

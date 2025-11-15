@@ -134,7 +134,20 @@ data class ActivityRoleRequirement(
     val requiredCount: Int
 )
 
-@Entity(tableName = "activity_time_split")
+@Entity(
+    tableName = "activity_time_split",
+    foreignKeys = [
+        ForeignKey(
+            entity = Activity::class,
+            parentColumns = ["id"],
+            childColumns = ["activityId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [
+        Index("activityId")
+    ]
+)
 data class ActivityTimeSplit(
     @PrimaryKey val activityId: String,
     val splitMinutes: Int,

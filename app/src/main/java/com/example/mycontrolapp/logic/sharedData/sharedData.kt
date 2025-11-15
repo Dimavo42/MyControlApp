@@ -1,6 +1,4 @@
 package com.example.mycontrolapp.logic.sharedData
-
-import com.example.mycontrolapp.logic.User
 import com.example.mycontrolapp.logic.sharedEnums.Profession
 
 data class AssignedCountRow(
@@ -23,4 +21,14 @@ data class TimeSegment(
     val start: Long,
     val end: Long
 )
+
+data class TimeSplitUiState(
+    val enabled: Boolean = false,
+    val minutesInput: String = "",
+    val segments: List<TimeSegment> = emptyList(),
+    val showAssignments: Boolean = true
+)
+
+
+
 

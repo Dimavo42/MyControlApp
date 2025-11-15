@@ -1,5 +1,4 @@
 package com.example.mycontrolapp.ui.componentes.screens
-import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
@@ -37,10 +36,10 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import com.example.mycontrolapp.R
 import com.example.mycontrolapp.logic.algorithms.buildTimeSplitAssignments
-import com.example.mycontrolapp.logic.sharedData.TimeSegment
 import com.example.mycontrolapp.logic.sharedEnums.Team
 import com.example.mycontrolapp.logic.sharedEnums.UserEditorMode
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.mycontrolapp.logic.sharedData.TimeSplitUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -125,7 +124,6 @@ fun AssignmentScreen(
         }
     }
 
-
     var dateText by remember(activity.id) {
         mutableStateOf(
             TextFieldValue(
@@ -165,7 +163,10 @@ fun AssignmentScreen(
     val canSave =
         (mode == UserEditorMode.Edit) &&
                 name.isNotBlank() &&
-                computed.isDateValid && computed.isStartValid && computed.isEndValid && computed.endAfterStart
+                computed.isDateValid &&
+                computed.isStartValid &&
+                computed.isEndValid &&
+                computed.endAfterStart
 
     /* --------------------- Needed seats (requirements - assigned) --------------------- */
 
@@ -186,13 +187,10 @@ fun AssignmentScreen(
     // All assignments are ready when there are no needed seats
     val allSeatsFilled = neededSeats.isEmpty()
 
-    // Time split Mode actions
-    var timeSplitMode by rememberSaveable { mutableStateOf(false) }
-    var timeSplitText by rememberSaveable { mutableStateOf("") }
-    var timeSplitSegments by remember(activity.id) {
-        mutableStateOf<List<TimeSegment>>(emptyList())
+    // Time split UI state (grouped)
+    var timeSplitUiState by remember(activity.id) {
+        mutableStateOf(TimeSplitUiState())
     }
-    var showTimeSplitAssignments by rememberSaveable { mutableStateOf(true) }
 
     val savedTimeSplit by remember(activityId) {
         viewModel.timeSplitState(activityId)
@@ -201,18 +199,22 @@ fun AssignmentScreen(
     // When DB state changes (first load / after save), sync into UI
     LaunchedEffect(savedTimeSplit) {
         savedTimeSplit?.let { state ->
-            timeSplitMode = state.segments.isNotEmpty()
-            timeSplitText = state.splitMinutes.toString()
-            timeSplitSegments = state.segments
+            timeSplitUiState = timeSplitUiState.copy(
+                enabled = state.segments.isNotEmpty(),
+                minutesInput = state.splitMinutes.toString(),
+                segments = state.segments
+            )
         }
     }
+
     // If assignments are not full → disable the mode,
     // but DON'T delete the saved segments from DB.
     LaunchedEffect(allSeatsFilled) {
         if (!allSeatsFilled) {
-            timeSplitMode = false
+            timeSplitUiState = timeSplitUiState.copy(enabled = false)
         }
     }
+
     fun optionsFor(): List<User> {
         return if (team == null) {
             unassignedUsers // open activity → all users
@@ -221,14 +223,11 @@ fun AssignmentScreen(
         }
     }
 
-
     // For each "need" seat, keep a local selection until you click Assign
     var pending by remember(activity.id) { mutableStateOf<Map<String, String?>>(emptyMap()) }
     fun selectionKey(n: RoleNeed) = "${n.profession.name}#${n.seatIndex}"
     val zoneId = remember { ZoneId.systemDefault() }
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
-
-
 
     /* ---------------------------------- UI ---------------------------------- */
     LazyColumn(
@@ -416,8 +415,11 @@ fun AssignmentScreen(
                                     viewModel.unassignUser(asg.activityId, asg.userId)
                                 }
                                 viewModel.clearTimeSplitState(activity.id)
-                                timeSplitSegments = emptyList()
-                                timeSplitMode = false
+                                timeSplitUiState = timeSplitUiState.copy(
+                                    enabled = false,
+                                    minutesInput = "",
+                                    segments = emptyList()
+                                )
                             }
 
                             viewModel.updateActivity(updated)
@@ -454,10 +456,10 @@ fun AssignmentScreen(
                 ) {
                     Text(text = stringResource(R.string.assignment_time_split))
                     Switch(
-                        checked = timeSplitMode,
+                        checked = timeSplitUiState.enabled,
                         onCheckedChange = { checked ->
                             if (allSeatsFilled) {
-                                timeSplitMode = checked
+                                timeSplitUiState = timeSplitUiState.copy(enabled = checked)
                             }
                         },
                         enabled = allSeatsFilled
@@ -478,7 +480,7 @@ fun AssignmentScreen(
             }
 
             // Time Split controls
-            if (timeSplitMode) {
+            if (timeSplitUiState.enabled) {
                 val hasSavedState = savedTimeSplit?.segments?.isNotEmpty() == true
 
                 item {
@@ -492,9 +494,11 @@ fun AssignmentScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         OutlinedTextField(
-                            value = timeSplitText,
+                            value = timeSplitUiState.minutesInput,
                             onValueChange = { newValue ->
-                                timeSplitText = newValue.filter { it.isDigit() }
+                                timeSplitUiState = timeSplitUiState.copy(
+                                    minutesInput = newValue.filter { it.isDigit() }
+                                )
                             },
                             enabled = enabledOptions,
                             label = { Text(stringResource(R.string.assignment_time_split)) },
@@ -507,14 +511,17 @@ fun AssignmentScreen(
                         // First "Apply" – only when we DON'T have saved state
                         Button(
                             onClick = {
-                                val minutes = timeSplitText.toIntOrNull() ?: return@Button
+                                val minutes = timeSplitUiState.minutesInput.toIntOrNull()
+                                    ?: return@Button
                                 val segments = buildTimeSplitAssignments(
                                     startTime = computed.startAtMillis!!,
                                     endTime = computed.endAtMillis!!,
                                     splitSizeMinutes = minutes,
                                     unassignedUsers = participantsForTimeSplit
                                 )
-                                timeSplitSegments = segments
+                                timeSplitUiState = timeSplitUiState.copy(
+                                    segments = segments
+                                )
                                 viewModel.saveTimeSplitState(
                                     activityId = activity.id,
                                     segments = segments,
@@ -522,7 +529,7 @@ fun AssignmentScreen(
                                 )
                             },
                             enabled = enabledOptions &&
-                                    timeSplitText.isNotBlank() &&
+                                    timeSplitUiState.minutesInput.isNotBlank() &&
                                     !hasSavedState
                         ) {
                             Text(stringResource(R.string.action_apply))
@@ -533,11 +540,9 @@ fun AssignmentScreen(
                             OutlinedButton(
                                 onClick = {
                                     // use current text if valid, otherwise fall back to saved minutes
-                                    val minutes = timeSplitText.toIntOrNull()
+                                    val minutes = timeSplitUiState.minutesInput.toIntOrNull()
                                         ?: savedTimeSplit?.splitMinutes
                                         ?: return@OutlinedButton
-
-                                    timeSplitText = minutes.toString()
 
                                     val segments = buildTimeSplitAssignments(
                                         startTime = computed.startAtMillis!!,
@@ -546,7 +551,11 @@ fun AssignmentScreen(
                                         unassignedUsers = participantsForTimeSplit
                                     )
 
-                                    timeSplitSegments = segments
+                                    timeSplitUiState = timeSplitUiState.copy(
+                                        minutesInput = minutes.toString(),
+                                        segments = segments
+                                    )
+
                                     viewModel.saveTimeSplitState(
                                         activityId = activity.id,
                                         segments = segments,
@@ -658,7 +667,7 @@ fun AssignmentScreen(
             }
 
             // ------------------ Time split result cards ------------------
-            if (timeSplitMode && timeSplitSegments.isNotEmpty()) {
+            if (timeSplitUiState.enabled && timeSplitUiState.segments.isNotEmpty()) {
 
                 // Header + toggle
                 item {
@@ -676,11 +685,15 @@ fun AssignmentScreen(
                         )
 
                         TextButton(
-                            onClick = { showTimeSplitAssignments = !showTimeSplitAssignments },
+                            onClick = {
+                                timeSplitUiState = timeSplitUiState.copy(
+                                    showAssignments = !timeSplitUiState.showAssignments
+                                )
+                            },
                             modifier = Modifier.testTag("btnToggleTimeSplitAssignments")
                         ) {
                             Text(
-                                if (showTimeSplitAssignments)
+                                if (timeSplitUiState.showAssignments)
                                     "Hide"
                                 else
                                     "Show"
@@ -689,9 +702,9 @@ fun AssignmentScreen(
                     }
                 }
                 // Only show the cards when toggle is ON
-                if (showTimeSplitAssignments) {
+                if (timeSplitUiState.showAssignments) {
                     items(
-                        items = timeSplitSegments,
+                        items = timeSplitUiState.segments,
                         key = { seg -> seg.hashCode() }
                     ) { seg ->
                         val start = Instant.ofEpochMilli(seg.start)
@@ -713,9 +726,7 @@ fun AssignmentScreen(
                                 supportingContent = {
                                     Text(
                                         "${start.format(timeFormatter)} - ${
-                                            end.format(
-                                                timeFormatter
-                                            )
+                                            end.format(timeFormatter)
                                         }"
                                     )
                                 }
@@ -724,7 +735,6 @@ fun AssignmentScreen(
                     }
                 }
             }
-
 
             // ------------------ Bottom actions ------------------
             item {
@@ -764,9 +774,7 @@ fun AssignmentScreen(
 
                     OutlinedButton(
                         onClick = {
-                            timeSplitSegments = emptyList()
-                            timeSplitText = ""
-                            timeSplitMode = false
+                            timeSplitUiState = TimeSplitUiState()
                             viewModel.clearTimeSplitState(activity.id)
                         },
                         modifier = Modifier
