@@ -92,6 +92,8 @@
     <string name="time_error_invalid_date">Enter a valid date, e.g. %1$s</string>
     <string name="time_pick_date">Pick date</string>
     <string name="time_error_end_before_start">End must be after start</string>
+
+
     <string name="time_label_date">Date (dd/MM/yyyy)</string>
     <string name="time_label_start">Start (HH:mm)</string>
     <string name="time_label_end">End (HH:mm)</string>
@@ -104,6 +106,11 @@
     <string name="action_hide">Hide</string>
     <string name="label_unassigned">Unassigned</string>
     <string name="label_resettimesplit">Reset Time Split</string>
+
+
+    <string name="label_date">Date (dd/MM/yyyy)</string>
+    <string name="label_start">Start (HH:mm)</string>
+    <string name="label_end">End (HH:mm)</string>
 
 
     <string name="keyword_all">all</string>

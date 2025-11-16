@@ -85,7 +85,8 @@ fun AssignmentScreen(
 
     var draftAssignments by remember(activityId, assignmentsForActivity) {
         mutableStateOf(
-            assignmentsForActivity.map { asg ->
+            assignmentsForActivity.distinctBy { it.userId to it.role }
+                .map { asg ->
                 AssignmentDraft(
                     userId = asg.userId,
                     profession = asg.role

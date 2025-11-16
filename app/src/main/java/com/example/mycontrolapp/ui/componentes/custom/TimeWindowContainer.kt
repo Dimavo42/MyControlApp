@@ -51,9 +51,6 @@ fun TimeWindowContainer(
     endTimeText: TextFieldValue,
     onEndTimeTextChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
-    labelDate: String = "Date (dd/MM/yyyy)",
-    labelStart: String = "Start (HH:mm)",
-    labelEnd: String = "End (HH:mm)",
     enabled: Boolean = true,
     showErrors: Boolean = true,
     zone: ZoneId = ZoneId.systemDefault(),
@@ -157,7 +154,7 @@ fun TimeWindowContainer(
             onValueChange = { tf ->
                 onDateTextChange(tf)
             },
-            label = { Text(labelDate) },
+            label = { Text(stringResource(R.string.time_label_date)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             isError = showErrors && dateText.text.isNotBlank() && parsedDate == null,
             supportingText = {
@@ -198,7 +195,7 @@ fun TimeWindowContainer(
                 onValueChange = { tf ->
                     onStartTimeTextChange(tf.copy(text = formatAsHhMm(tf.text)))
                 },
-                label = { Text(labelStart) },
+                label = { Text(stringResource(R.string.time_label_start)) },
                 isError = showErrors && startTimeText.text.isNotBlank() && parsedStart == null,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
@@ -209,7 +206,7 @@ fun TimeWindowContainer(
                 onValueChange = { tf ->
                     onEndTimeTextChange(tf.copy(text = formatAsHhMm(tf.text)))
                 },
-                label = { Text(labelEnd) },
+                label = { Text(stringResource(R.string.time_label_end)) },
                 isError = showErrors &&
                         endTimeText.text.isNotBlank() &&
                         (parsedEnd == null || (parsedStart != null && parsedEnd != null && !endAfterStart)),

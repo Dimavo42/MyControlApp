@@ -43,6 +43,11 @@
     <string name="label_resettimesplit">איפוס חלוקת זמן</string>
 
 
+    <string name="label_date">תאריך (dd/MM/yyyy)</string>
+    <string name="label_start">שעת התחלה (HH:mm)</string>
+    <string name="label_end">שעת סיום (HH:mm)</string>
+
+
 
     <string name="common_back">חזרה</string>
     <string name="common_clear">נקה</string>
