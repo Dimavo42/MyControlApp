@@ -6,6 +6,7 @@ plugins {
     id("com.google.dagger.hilt.android")
     id("com.google.gms.google-services")
     id("com.google.devtools.ksp")
+    id("kotlin-parcelize")
 }
 
 android {
@@ -45,7 +46,6 @@ android {
     }
 
     ksp {
-        // Room schema export (compile-time read/write is where the serializer gets used)
         arg("room.schemaLocation", "$projectDir/schemas")
     }
 

@@ -159,7 +159,7 @@ class ActivityViewModel @Inject constructor(
     fun updateUser(u: User) = viewModelScope.launch { listManager.updateUser(u) }
     fun removeUser(id: String) = viewModelScope.launch { listManager.removeUser(id) }
 
-    suspend  fun insertActivityWithRequirements(
+    suspend fun insertActivityWithRequirements(
         activity: Activity,
         roles: List<Profession>
     ) : String = withContext(Dispatchers.IO) {
