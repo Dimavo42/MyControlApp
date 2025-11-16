@@ -1,5 +1,4 @@
 package com.example.mycontrolapp.logic
-import com.example.mycontrolapp.logic.dao.ActivityRoleRequirementDao
 import com.example.mycontrolapp.logic.sharedEnums.Profession
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
@@ -66,6 +65,19 @@ class FirebaseDataSource @Inject constructor(
         val docId = "${r.activityId}_${r.profession.name}"
         requirements.document(docId).set(r, SetOptions.merge()).await()
     }
+
+    suspend fun upsertAllRequirements(requirementsList: List<ActivityRoleRequirement>) {
+        if (requirementsList.isEmpty()) return
+        val batch = fs.batch()
+        requirementsList.forEach { r ->
+            val docId = "${r.activityId}_${r.profession.name}"
+            val docRef = requirements.document(docId)
+            batch.set(docRef, r, SetOptions.merge())
+        }
+        batch.commit().await()
+    }
+
+
     suspend fun deleteRequirement(activityId: String, profession: Profession) {
         val docId = "${activityId}_${profession.name}"
         requirements.document(docId).delete().await()

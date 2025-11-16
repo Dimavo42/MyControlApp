@@ -30,7 +30,7 @@ import java.time.format.DateTimeFormatter
 import com.example.mycontrolapp.R
 import com.example.mycontrolapp.logic.sharedEnums.Team
 import kotlinx.coroutines.launch
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 
 

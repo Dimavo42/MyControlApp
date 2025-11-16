@@ -1,5 +1,6 @@
 package com.example.mycontrolapp.logic
 import androidx.room.withTransaction
+import com.example.mycontrolapp.logic.sharedData.TimeSegment
 import com.example.mycontrolapp.logic.sharedEnums.Profession
 import com.example.mycontrolapp.utils.RemoteEnabled
 import kotlinx.coroutines.Dispatchers
@@ -132,7 +133,12 @@ class ListManagerHybrid @Inject constructor(
 
     }
 
-    suspend fun replaceTimeSplitForActivity(activityId: String, row: ActivityTimeSplit) {
+    override suspend fun saveTimeSplitState(activityId: String, segments: List<TimeSegment>, splitMinutes: Int) {
+        val row = ActivityTimeSplit(
+            activityId = activityId,
+            splitMinutes = splitMinutes,
+            segments = segments
+        )
         room.db.withTransaction {
             room.db.activityTimeSplitDao().deleteByActivityId(activityId)
             room.db.activityTimeSplitDao().upsert(row)
@@ -140,12 +146,16 @@ class ListManagerHybrid @Inject constructor(
         if (remoteEnabled) runCatching { remoteLazy.get().replaceActivityTimeSplit(row) }
     }
 
-    suspend fun clearTimeSplitForActivity(activityId: String) {
+
+    override suspend fun clearTimeSplitState(activityId: String) {
         room.db.activityTimeSplitDao().deleteByActivityId(activityId)
         if (remoteEnabled) runCatching { remoteLazy.get().deleteActivityTimeSplit(activityId) }
     }
 
-    override suspend fun syncOnceIfRemoteEnabled(): Boolean =
+    override suspend fun syncOnceIfRemoteEnabled(): Boolean = if (remoteEnabled) syncOnceWithTimeout() else false
 
-        if (remoteEnabled) syncOnceWithTimeout() else false
+    override suspend fun upsertAllRequirements(items: List<ActivityRoleRequirement>) {
+        room.db.activityRoleRequirementDao().upsertAll(items)
+        if (remoteEnabled  && items.isNotEmpty()) runCatching {remoteLazy.get().upsertAllRequirements(items)}
+    }
 }
