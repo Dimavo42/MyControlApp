@@ -17,8 +17,11 @@ interface AssignmentDao {
     // Return rowId so caller can know success; ABORT throws on conflict
     @Query("DELETE FROM assignments")
     suspend fun deleteAll()
-    @Insert(onConflict = OnConflictStrategy.Companion.ABORT)
+    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun insert(assignment: Assignment): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(assignments: List<Assignment>)
 
     @Query("DELETE FROM assignments WHERE id = :id")
     suspend fun deleteById(id: String)

@@ -1,4 +1,5 @@
 package com.example.mycontrolapp.logic
+import androidx.annotation.Keep
 import androidx.room.*
 import com.example.mycontrolapp.logic.sharedData.TimeSegment
 import com.example.mycontrolapp.logic.sharedEnums.Profession
@@ -18,7 +19,6 @@ data class User(
     var canFillAnyRole: Boolean = false,
     var team: Team? = null
 ) {
-    // Firestore needs a true no-arg ctor (even with defaults)
     constructor() : this("", "", true, false, null)
 
     override fun toString(): String {
@@ -43,7 +43,7 @@ data class UserProfession(
 }
 
 // ---------------- Activities ----------------
-
+@Keep
 @IgnoreExtraProperties
 @Entity(
     tableName = "activities",

@@ -44,6 +44,7 @@ fun AddUser(
 
     // Users for Edit mode
     val users by viewModel.usersFlow.collectAsState(initial = emptyList())
+    val hasUsers = users.isNotEmpty()
 
     var userMenuExpanded by remember { mutableStateOf(false) }
     var selectedUserId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -167,8 +168,20 @@ fun AddUser(
             }
         }
 
-        // Edit mode: user selector
-        if (mode == UserEditorMode.Edit) {
+        // When Edit tab selected and no users exist -> show message
+        if (mode == UserEditorMode.Edit && !hasUsers) {
+            item {
+                Text(
+                    text = "No users to edit. Please add a user first.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+        }
+
+        // Edit mode: user selector (only if we actually have users)
+        if (mode == UserEditorMode.Edit && hasUsers) {
             item {
                 ExposedDropdownMenuBox(
                     expanded = userMenuExpanded,
@@ -220,7 +233,6 @@ fun AddUser(
             )
         }
 
-
         item {
             ExposedDropdownMenuBox(
                 expanded = teamMenuExpanded,
@@ -254,7 +266,7 @@ fun AddUser(
                     // Actual teams (excluding Unknown)
                     allTeams.forEach { t ->
                         DropdownMenuItem(
-                            text = { Text(t.name) },
+                            text = { Text(stringResource(t.labelRes)) },
                             onClick = {
                                 selectedTeamName = t.name
                                 teamMenuExpanded = false
@@ -264,7 +276,6 @@ fun AddUser(
                 }
             }
         }
-        // ------------------------------------------------------
 
         item {
             Row(
@@ -280,7 +291,12 @@ fun AddUser(
             }
         }
 
-        item { Text(text = stringResource(R.string.label_professions_multi), style = MaterialTheme.typography.labelLarge) }
+        item {
+            Text(
+                text = stringResource(R.string.label_professions_multi),
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
 
         item {
             val display = selectedProfessions
@@ -355,7 +371,7 @@ fun AddUser(
                                     name = "${firstName.trim()} ${lastName.trim()}",
                                     isActive = true,
                                     canFillAnyRole = canFillAnyRole,
-                                    team = selectedTeam                     // ⬅️ save team
+                                    team = selectedTeam                     // save team
                                 )
                                 viewModel.insertUser(newUser)
                                 val setToSave = if (canFillAnyRole) emptySet() else selectedProfessions
@@ -372,7 +388,7 @@ fun AddUser(
                                 val updated = current.copy(
                                     name = "${firstName.trim()} ${lastName.trim()}",
                                     canFillAnyRole = canFillAnyRole,
-                                    team = selectedTeam                  // ⬅️ save team
+                                    team = selectedTeam                  // save team
                                 )
                                 viewModel.updateUser(updated)
                                 val setToSave = if (canFillAnyRole) emptySet() else selectedProfessions

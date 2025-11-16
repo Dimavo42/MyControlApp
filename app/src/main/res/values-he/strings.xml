@@ -27,6 +27,9 @@
     <string name="action_apply">אשר</string>
     <string name="action_reapply">אשר מחדש</string>
 
+    <string name="assignment_label_TimeSplit_3">הקצאות זמן למשימה </string>
+    <string name="action_hide">הסתר</string>
+
     <string name="common_close">סגור</string>
     <string name="manage_button">ניהול</string>
 
@@ -36,6 +39,8 @@
     <string name="action_assign_ellipsis">שייך…</string>
     <string name="action_assign">שייך</string>
     <string name="action_delete">מחק</string>
+    <string name="label_unassigned">לא נבחר</string>
+    <string name="label_resettimesplit">איפוס חלוקת זמן</string>
 
 
 

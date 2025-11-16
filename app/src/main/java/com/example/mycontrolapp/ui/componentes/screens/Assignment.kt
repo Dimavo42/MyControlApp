@@ -39,7 +39,9 @@ import com.example.mycontrolapp.logic.algorithms.buildTimeSplitAssignments
 import com.example.mycontrolapp.logic.sharedEnums.Team
 import com.example.mycontrolapp.logic.sharedEnums.UserEditorMode
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.mycontrolapp.logic.sharedData.AssignmentDraft
 import com.example.mycontrolapp.logic.sharedData.TimeSplitUiState
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,15 +77,28 @@ fun AssignmentScreen(
     val users by viewModel.usersFlow.collectAsState(initial = emptyList())
     val usersById = remember(users) { users.associateBy { it.id } }
 
-    // Unassigned users for this activity (used to filter per role)
-    val unassignedUsers by remember(activityId) {
-        viewModel.usersNotAssignedToActivity(activityId)
-    }.collectAsState(initial = emptyList())
 
     // Assignments for THIS activity
     val assignmentsForActivity by remember(activityId) {
         viewModel.assignmentsFlow.map { list -> list.filter { it.activityId == activityId } }
     }.collectAsState(initial = emptyList())
+
+    var draftAssignments by remember(activityId, assignmentsForActivity) {
+        mutableStateOf(
+            assignmentsForActivity.map { asg ->
+                AssignmentDraft(
+                    userId = asg.userId,
+                    profession = asg.role
+                )
+            }
+        )
+    }
+
+    val unassignedUsers:List<User> = remember(users,draftAssignments) {
+        val assignedIds  = draftAssignments.map { it.userId }.toSet()
+        users.filter { it.id !in assignedIds }
+    }
+
 
     // REQUIRED roles
     val requirementsRaw by remember(activityId) {
@@ -112,10 +127,10 @@ fun AssignmentScreen(
     fun LocalDate.toDdMmYyyy(): String = DateTimeFormatter.ofPattern("dd/MM/uuuu").format(this)
 
     // Users that are already assigned to this activity (optionally filtered by team)
-    val participantsForTimeSplit: List<User> = remember(assignmentsForActivity, usersById, team) {
-        val assignedUsers = assignmentsForActivity
+    val participantsForTimeSplit: List<User> = remember(draftAssignments, usersById, team) {
+        val assignedUsers = draftAssignments
             .mapNotNull { asg -> usersById[asg.userId] }
-            .distinctBy { it.id }   // just in case the same user appears multiple times
+            .distinctBy { it.id }
 
         if (team != null) {
             assignedUsers.filter { it.team == team }
@@ -171,8 +186,8 @@ fun AssignmentScreen(
     /* --------------------- Needed seats (requirements - assigned) --------------------- */
 
     // How many assigned per role right now?
-    val assignedByRole: Map<Profession, Int> = remember(assignmentsForActivity) {
-        assignmentsForActivity.groupBy { it.role }.mapValues { it.value.size }
+    val assignedByRole: Map<Profession, Int> = remember(draftAssignments) {
+        draftAssignments.groupBy { it.profession }.mapValues { it.value.size }
     }
 
     // How many still needed per role?
@@ -522,11 +537,6 @@ fun AssignmentScreen(
                                 timeSplitUiState = timeSplitUiState.copy(
                                     segments = segments
                                 )
-                                viewModel.saveTimeSplitState(
-                                    activityId = activity.id,
-                                    segments = segments,
-                                    splitMinutes = minutes
-                                )
                             },
                             enabled = enabledOptions &&
                                     timeSplitUiState.minutesInput.isNotBlank() &&
@@ -541,25 +551,15 @@ fun AssignmentScreen(
                                 onClick = {
                                     // use current text if valid, otherwise fall back to saved minutes
                                     val minutes = timeSplitUiState.minutesInput.toIntOrNull()
-                                        ?: savedTimeSplit?.splitMinutes
                                         ?: return@OutlinedButton
-
                                     val segments = buildTimeSplitAssignments(
                                         startTime = computed.startAtMillis!!,
                                         endTime = computed.endAtMillis!!,
                                         splitSizeMinutes = minutes,
                                         unassignedUsers = participantsForTimeSplit
                                     )
-
                                     timeSplitUiState = timeSplitUiState.copy(
-                                        minutesInput = minutes.toString(),
                                         segments = segments
-                                    )
-
-                                    viewModel.saveTimeSplitState(
-                                        activityId = activity.id,
-                                        segments = segments,
-                                        splitMinutes = minutes
                                     )
                                 },
                                 enabled = enabledOptions
@@ -598,12 +598,19 @@ fun AssignmentScreen(
                         },
                         onAssign = {
                             val uid = selectedId ?: return@AssignmentRow
-                            viewModel.assignUser(
-                                activityId = activity.id,
-                                userId = uid,
-                                profession = need.profession
-                            )
-                            // Clear selection for this slot; flows will update and this row will disappear
+
+                            // Avoid duplicates of the same user+role
+                            val alreadyExists = draftAssignments.any {
+                                it.userId == uid && it.profession == need.profession
+                            }
+                            if (!alreadyExists) {
+                                draftAssignments = draftAssignments + AssignmentDraft(
+                                    userId = uid,
+                                    profession = need.profession
+                                )
+                            }
+
+                            // Clear selection for this slot; recomputation will hide the row
                             pending = pending.toMutableMap().apply { remove(key) }
                         },
                         enabled = hasOptions && selectedId != null
@@ -626,7 +633,7 @@ fun AssignmentScreen(
                 )
             }
 
-            if (assignmentsForActivity.isEmpty()) {
+            if (draftAssignments.isEmpty()) {
                 item {
                     Text(
                         stringResource(R.string.msg_no_assignments_yet),
@@ -637,28 +644,30 @@ fun AssignmentScreen(
                 }
             } else {
                 items(
-                    items = assignmentsForActivity,
-                    key = { it.id }
-                ) { asg ->
-                    val user = usersById[asg.userId]
+                    items = draftAssignments,
+                    key = { draft -> "${draft.userId}_${draft.profession.name}" }
+                ) { draft ->
+                    val user = usersById[draft.userId]
                     ElevatedCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .testTag("cardAssignment_${asg.id}")
-                            .semantics {
-                                contentDescription = "resourceId:cardAssignment_${asg.id}"
-                            }
+                            .testTag("cardAssignment_${draft.userId}_${draft.profession.name}")
                     ) {
                         ListItem(
                             headlineContent = {
-                                Text(
-                                    user?.name ?: stringResource(R.string.unknown_user)
-                                )
+                                Text(user?.name ?: stringResource(R.string.unknown_user))
                             },
-                            supportingContent = { Text(stringResource(asg.role.labelRes)) },
+                            supportingContent = {
+                                Text(stringResource(draft.profession.labelRes))
+                            },
                             trailingContent = {
                                 TextButton(
-                                    onClick = { viewModel.unassignUser(activityId, asg.userId) }
+                                    onClick = {
+                                        draftAssignments = draftAssignments.filterNot {
+                                            it.userId == draft.userId &&
+                                                    it.profession == draft.profession
+                                        }
+                                    }
                                 ) { Text(stringResource(R.string.action_unassign)) }
                             }
                         )
@@ -679,7 +688,7 @@ fun AssignmentScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Time Split Assignments",
+                            text = stringResource(R.string.assignment_label_TimeSplit_3),
                             style = MaterialTheme.typography.titleSmall,
                             modifier = Modifier.testTag("lblTimeSplitAssignments")
                         )
@@ -694,9 +703,9 @@ fun AssignmentScreen(
                         ) {
                             Text(
                                 if (timeSplitUiState.showAssignments)
-                                    "Hide"
+                                    stringResource(R.string.action_hide)
                                 else
-                                    "Show"
+                                    stringResource(R.string.action_show)
                             )
                         }
                     }
@@ -713,7 +722,7 @@ fun AssignmentScreen(
                         val end = Instant.ofEpochMilli(seg.end)
                             .atZone(zoneId)
                             .toLocalTime()
-                        val userName = usersById[seg.userId]?.name ?: "Unassigned"
+                        val userName = usersById[seg.userId]?.name ?: stringResource(R.string.label_unassigned)
 
                         ElevatedCard(
                             modifier = Modifier
@@ -742,16 +751,49 @@ fun AssignmentScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    val coroutineScope = rememberCoroutineScope()
                     OutlinedButton(
                         enabled = allSeatsFilled,
-                        onClick = { navController.navigate(AppDestinations.Home) },
+                        onClick = {
+                            coroutineScope.launch {
+                                // 1. Clear old assignments in DB
+                                assignmentsForActivity.forEach { asg ->
+                                    viewModel.unassignUser(asg.activityId, asg.userId)
+                                }
+                                // 2. Persist draft assignments
+                                draftAssignments.forEach { draft ->
+                                    viewModel.assignUser(
+                                        activityId = activity.id,
+                                        userId = draft.userId,
+                                        profession = draft.profession
+                                    )
+                                }
+                                // 3. Persist time split state
+                                val minutes = timeSplitUiState.minutesInput.toIntOrNull()
+                                if (timeSplitUiState.enabled &&
+                                    timeSplitUiState.segments.isNotEmpty() &&
+                                    minutes != null
+                                ) {
+                                    viewModel.saveTimeSplitState(
+                                        activityId = activity.id,
+                                        segments = timeSplitUiState.segments,
+                                        splitMinutes = minutes
+                                    )
+                                } else {
+                                    viewModel.clearTimeSplitState(activity.id)
+                                }
+                                // 4. Navigate home when everything is triggered
+                                navController.navigate(AppDestinations.Home)
+                            }
+                        },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF2E7D32),
                             contentColor = Color.White
                         ),
-                        modifier = Modifier
-                            .testTag("btnBack")
-                    ) { Text("Save") }
+                        modifier = Modifier.testTag("btnSaveAssignments")
+                    ) {
+                        Text(stringResource(R.string.action_save_changes))
+                    }
                     if (allSeatsFilled) {
                         Button(
                             onClick = { navController.popBackStack() },
@@ -775,12 +817,11 @@ fun AssignmentScreen(
                     OutlinedButton(
                         onClick = {
                             timeSplitUiState = TimeSplitUiState()
-                            viewModel.clearTimeSplitState(activity.id)
                         },
                         modifier = Modifier
                             .testTag("btnResetTimeSplit")
                     ) {
-                        Text("Reset Time Split")
+                        Text(stringResource(R.string.label_resettimesplit))
                     }
                 }
             }

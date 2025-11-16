@@ -101,6 +101,10 @@
     <string name="label_filter_by_user">Filter by user</string>
     <string name="filter_all_users">All users</string>
     <string name="action_show">Show</string>
+    <string name="action_hide">Hide</string>
+    <string name="label_unassigned">Unassigned</string>
+    <string name="label_resettimesplit">Reset Time Split</string>
+
 
     <string name="keyword_all">all</string>
     <string name="keyword_all_users">all users</string>
@@ -164,6 +168,7 @@
     <string name="assignment_label_team">Team </string>
 
     <string name="assignment_label_TimeSplit_2">To use Time Split Mode, you must assign all required users first. </string>
+    <string name="assignment_label_TimeSplit_3">Time Split Assignments </string>
 
 
 

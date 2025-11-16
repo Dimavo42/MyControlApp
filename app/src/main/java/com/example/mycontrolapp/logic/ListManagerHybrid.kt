@@ -15,7 +15,7 @@ class ListManagerHybrid @Inject constructor(
     private val room: ListManagerRoom,
     private val db: AppDb,
     private val remoteLazy: Lazy<FirebaseDataSource>,
-    @RemoteEnabled private val remoteEnabled: Boolean
+    @param:RemoteEnabled private val remoteEnabled: Boolean
 ) : ListManager by room {
 
     /**
@@ -24,35 +24,67 @@ class ListManagerHybrid @Inject constructor(
      * Won't even construct Firebase on emulator/debug when remoteEnabled == false.
      */
     suspend fun syncOnceWithTimeout(timeoutMs: Long = 10_000): Boolean {
-       if (!remoteEnabled) return false
+        if (!remoteEnabled) return false
         val remote = remoteLazy.get()
+
         return withTimeoutOrNull(timeoutMs) {
             val snap = remote.pullAll()
+
             withContext(Dispatchers.IO) {
                 db.withTransaction {
-                    // Activities
-                    snap.activities.forEach { db.activityDao().upsert(it) }
-                    // Users
-                    snap.users.forEach { db.userDao().upsert(it) }
-                    // Assignments (replace)
+                    // 1) PARENTS FIRST: Users + Activities
+                    snap.users.forEach { user ->
+                        db.userDao().upsert(user)
+                    }
+
+                    snap.activities.forEach { activity ->
+                        db.activityDao().upsert(activity)
+                    }
+
+                    // Build sets of valid parent IDs for FK checks
+                    val validUserIds = snap.users.map { it.id }.toSet()
+                    val validActivityIds = snap.activities.map { it.id }.toSet()
+
+                    // 2) CHILD TABLES – always clear first, then insert filtered data
+
+                    // --- Assignments ---
                     db.assignmentDao().deleteAll()
-                    snap.assignments.forEach { db.assignmentDao().insert(it) }
+                    val validAssignments = snap.assignments.filter { asg ->
+                        asg.activityId in validActivityIds && asg.userId in validUserIds
+                    }
+                    if (validAssignments.isNotEmpty()) {
+                        db.assignmentDao().insertAll(validAssignments)
+                    }
 
-                    // Requirements (replace)
+                    // --- Requirements ---
                     db.activityRoleRequirementDao().deleteAll()
-                    db.activityRoleRequirementDao().upsertAll(snap.requirements)
+                    val validRequirements = snap.requirements.filter { req ->
+                        req.activityId in validActivityIds
+                    }
+                    if (validRequirements.isNotEmpty()) {
+                        db.activityRoleRequirementDao().upsertAll(validRequirements)
+                    }
 
-                    // User professions (replace)
+                    // --- User professions ---
                     db.userProfessionDao().deleteAll()
-                    db.userProfessionDao().insertAll(snap.userProfessions)
+                    val validUserProfessions = snap.userProfessions.filter { up ->
+                        up.userId in validUserIds
+                    }
+                    if (validUserProfessions.isNotEmpty()) {
+                        db.userProfessionDao().insertAll(validUserProfessions)
+                    }
 
-                    // Time-Split (replace)
+                    // --- Time-split ---
                     db.activityTimeSplitDao().deleteAll()
-                    if (snap.activityTimeSplit.isNotEmpty()) {
-                        db.activityTimeSplitDao().upsertAll(snap.activityTimeSplit)
+                    val validTimeSplits = snap.activityTimeSplit.filter { ts ->
+                        ts.activityId in validActivityIds
+                    }
+                    if (validTimeSplits.isNotEmpty()) {
+                        db.activityTimeSplitDao().upsertAll(validTimeSplits)
                     }
                 }
             }
+
             true
         } ?: false
     }

@@ -19,6 +19,11 @@ data class RoleNeed(
     val seatIndex: Int
 )
 
+data class AssignmentDraft(
+    val userId: String,
+    val profession: Profession
+)
+
 @IgnoreExtraProperties
 @Parcelize
 data class TimeSegment(

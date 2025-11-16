@@ -116,10 +116,16 @@
     <string name="selected_n">נבחר: %1$d</string>
     <string name="number_of_candidates_range">מספר מועמדים (%1$d..%2$d)</string>
 
+    <string name="label_unassigned">לא נבחר</string>
+    <string name="label_resettimesplit">איפוס חלוקת זמן</string>
+
     <string name="assignment_time_split"> חלוקת הזמן (בדקות)</string>
+    <string name="action_hide">הסתר</string>
 
 
     <string name="add_activity_attach_team">שייך מחלקה למשימה</string>
+
+    <string name="assignment_label_TimeSplit_3">הקצאות זמן למשימה </string>
 
     <string name="create_activity_title">יצירת פעילות חדשה</string>
     <string name="error_selected_users_exceeds">בחרת %1$d משתמשים אך מספר המועמדים המותר הוא %2$d.</string>
