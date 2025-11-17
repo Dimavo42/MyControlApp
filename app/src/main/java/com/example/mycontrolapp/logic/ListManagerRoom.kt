@@ -98,6 +98,17 @@ class ListManagerRoom @Inject constructor(
         db.assignmentDao().deleteById(assignmentId)
     }
 
+    override suspend fun replaceAssignmentsForActivity(activityId: String,newAssignments: List<Assignment>) {
+        db.withTransaction {
+            db.assignmentDao().deleteByActivity(activityId)
+            newAssignments.forEach {
+                db.assignmentDao().insert(it)
+            }
+        }
+    }
+
+
+
     override fun requiredCountForActivityFlow(activityId: String): Flow<Int> =
         roleRequirementsFlow(activityId) // this already calls your DAO: requirementsForActivityFlow(activityId)
             .map { reqs -> reqs.sumOf { it.requiredCount } }
@@ -146,9 +157,7 @@ class ListManagerRoom @Inject constructor(
     override fun requiredCountsAllFlow() =
         db.activityRoleRequirementDao().requiredCountsAllFlow()
 
-    override suspend fun getMaxOrderForActivity(activityId: String): Int? {
-        return db.assignmentDao().getMaxOrderForActivity(activityId)
-    }
+
 
     override fun timeSplitState(activityId: String): Flow<ActivityTimeSplit?> =
         db.activityTimeSplitDao().observe(activityId)

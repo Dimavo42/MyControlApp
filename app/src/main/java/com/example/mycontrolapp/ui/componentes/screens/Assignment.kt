@@ -40,6 +40,7 @@ import com.example.mycontrolapp.logic.algorithms.buildTimeSplitAssignments
 import com.example.mycontrolapp.logic.sharedEnums.Team
 import com.example.mycontrolapp.logic.sharedEnums.UserEditorMode
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.mycontrolapp.logic.Assignment
 import com.example.mycontrolapp.logic.sharedData.AssignmentDraft
 import com.example.mycontrolapp.logic.sharedData.TimeSplitUiState
 import kotlinx.coroutines.launch
@@ -52,8 +53,7 @@ fun AssignmentScreen(
     viewModel: ActivityViewModel = hiltViewModel()
 ) {
     val activities by viewModel.activitiesFlow.collectAsState(initial = emptyList())
-    val activity =
-        remember(activities, activityId) { activities.firstOrNull { it.id == activityId } }
+    val activity = remember(activities, activityId) { activities.firstOrNull { it.id == activityId } }
 
     if (activity == null) {
         Column(Modifier.padding(16.dp)) {
@@ -77,16 +77,14 @@ fun AssignmentScreen(
     // Users (to resolve names and build candidate lists)
     val users by viewModel.usersFlow.collectAsState(initial = emptyList())
     val usersById = remember(users) { users.associateBy { it.id } }
-
     // Assignments for THIS activity
-    val assignmentsForActivity by remember(activityId) {
-        viewModel.assignmentsFlow.map { list -> list.filter { it.activityId == activityId } }
-    }.collectAsState(initial = emptyList())
+    val assignmentsForActivity by viewModel.assignmentsFlowForActivity(activity.id).collectAsState(initial = emptyList())
+
+
 
     var draftAssignments by remember(activityId, assignmentsForActivity) {
         mutableStateOf(
             assignmentsForActivity
-                .distinctBy { it.userId to it.role }
                 .map { asg ->
                     AssignmentDraft(
                         userId = asg.userId,
@@ -95,6 +93,7 @@ fun AssignmentScreen(
                 }
         )
     }
+
 
     val unassignedUsers: List<User> = remember(users, draftAssignments) {
         val assignedIds = draftAssignments.map { it.userId }.toSet()
@@ -768,19 +767,12 @@ fun AssignmentScreen(
                                 coroutineScope.launch {
                                     isSaving = true
                                     try {
-                                        // 1. Clear old assignments in DB
-                                        assignmentsForActivity.forEach { asg ->
-                                            viewModel.unassignUser(asg.activityId, asg.userId)
-                                        }
-                                        // 2. Persist draft assignments
-                                        draftAssignments.forEach { draft ->
-                                            viewModel.assignUser(
-                                                activityId = activity.id,
-                                                userId = draft.userId,
-                                                profession = draft.profession
-                                            )
-                                        }
-                                        // 3. Persist time split state
+                                        val assignmentList = draftAssignments.mapIndexed { index,draft -> Assignment(
+                                            activityId = activityId,
+                                            userId = draft.userId,
+                                            role = draft.profession,
+                                            orderInActivity  = index)  }
+                                        viewModel.replaceAssignmentsForActivity(activity.id,assignmentList)
                                         val minutes = timeSplitUiState.minutesInput.toIntOrNull()
                                         if (timeSplitUiState.enabled &&
                                             timeSplitUiState.segments.isNotEmpty() &&

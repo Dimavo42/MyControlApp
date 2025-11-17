@@ -178,6 +178,16 @@ class ListManagerHybrid @Inject constructor(
         if (remoteEnabled) runCatching { remoteLazy.get().replaceActivityTimeSplit(row) }
     }
 
+    override suspend fun replaceAssignmentsForActivity(
+        activityId: String,
+        newAssignments: List<Assignment>
+    ) {
+        room.replaceAssignmentsForActivity(activityId, newAssignments)
+        if (remoteEnabled) {
+            remoteLazy.get().replaceAssignmentsForActivity(activityId, newAssignments)
+        }
+    }
+
 
     override suspend fun clearTimeSplitState(activityId: String) {
         room.db.activityTimeSplitDao().deleteByActivityId(activityId)

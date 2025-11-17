@@ -17,7 +17,7 @@ import com.example.mycontrolapp.logic.dao.UserProfessionDao
         ActivityRoleRequirement::class,
         UserProfession::class,
         ActivityTimeSplit::class],
-    version = 28,
+    version = 30,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

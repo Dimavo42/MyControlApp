@@ -1,4 +1,5 @@
 package com.example.mycontrolapp.ui.componentes
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mycontrolapp.logic.Activity
@@ -41,7 +42,6 @@ class ActivityViewModel @Inject constructor(
             listManager.syncOnceIfRemoteEnabled()
         }
     }
-
     private val sharing = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000)
 
     /* ---------------------------- UI filters ---------------------------- */
@@ -79,6 +79,10 @@ class ActivityViewModel @Inject constructor(
 
     fun userProfessionsFlow(userId: String) =
         listManager.userProfessionsFlow(userId).distinctUntilChanged()
+
+    fun assignmentsFlowForActivity(activityId: String) =
+        listManager.assignmentsByActivityFlow(activityId).distinctUntilChanged()
+
 
     /* --------------------- Activities with assigned users ------------------ */
 
@@ -151,7 +155,6 @@ class ActivityViewModel @Inject constructor(
 
     /* ------------------------------- Mutations ----------------------------- */
 
-    fun insertActivity(a: Activity) = viewModelScope.launch { listManager.addActivity(a) }
     fun updateActivity(a: Activity) = viewModelScope.launch { listManager.updateActivity(a) }
     fun removeActivity(id: String)   = viewModelScope.launch { listManager.removeActivity(id) }
 
@@ -184,11 +187,6 @@ class ActivityViewModel @Inject constructor(
         activity.id
     }
 
-    fun assignUser(activityId: String, userId: String, profession: Profession) = viewModelScope.launch {
-        val currentMax = listManager.getMaxOrderForActivity(activityId) ?: -1
-        val nextOrder = currentMax + 1
-        listManager.addAssignment(Assignment(activityId = activityId, userId = userId, role = profession,orderInActivity  = nextOrder))
-    }
 
     fun unassignUser(activityId: String, userId: String) = viewModelScope.launch {
         assignmentsFlow.value
@@ -196,11 +194,11 @@ class ActivityViewModel @Inject constructor(
             ?.let { listManager.removeAssignment(it.id) }
     }
 
-    fun insertRequirement(a: ActivityRoleRequirement) =
-        viewModelScope.launch { listManager.upsertRequirement(a) }
+    suspend fun replaceAssignmentsForActivity(activityId: String, listOfAssignments: List<Assignment>) {
+        listManager.replaceAssignmentsForActivity(activityId,listOfAssignments)
+    }
 
     fun replaceUserProfessions(userId: String, professions: Set<Profession>){
-
         viewModelScope.launch { listManager.replaceUserProfessions(userId, professions) }
     }
 
@@ -208,64 +206,6 @@ class ActivityViewModel @Inject constructor(
 
     fun roleRequirementsFlow(activityId: String): Flow<List<ActivityRoleRequirement>> =
         listManager.roleRequirementsFlow(activityId)
-
-
-
-    fun usersNotAssignedToActivity(activityId: String): Flow<List<User>> =
-        combine(
-            usersFlow,                        // Flow<List<User>>
-            assignmentsFlow,                  // Flow<List<Assignment>>
-            roleRequirementsFlow(activityId), // Flow<List<RoleRequirement>>
-            userProfessionsAllFlow            // Flow<Map<String, Set<Profession>>>
-        ) { users, assignments, requiredRoles, profMap ->
-
-            // 1) Who's already assigned to this activity?
-            val assignedIds: Set<String> = assignments.asSequence()
-                .filter { it.activityId == activityId }
-                .map { it.userId }
-                .toSet()
-
-            // 2) How many are assigned per profession (for THIS activity)?
-            val assignedByRole: Map<Profession, Int> =
-                assignments.asSequence()
-                    .filter { it.activityId == activityId }
-                    .groupBy { it.role }
-                    .mapValues { (_, list) -> list.size }
-
-            // 3) Which professions are STILL NEEDED? (required - assigned > 0)
-            val neededProfs: Set<Profession> =
-                requiredRoles.asSequence()
-                    .filter { it.profession != Profession.Unknown }
-                    .filter { req -> (req.requiredCount - (assignedByRole[req.profession] ?: 0)) > 0 }
-                    .map { it.profession }
-                    .toSet()
-
-            // 4) Final filter:
-            //    - user not already assigned
-            //    - and (can fill any role OR has at least one of the needed professions)
-            users.filter { u ->
-                u.id !in assignedIds &&
-                        (
-                                neededProfs.isEmpty() || // if nothing is needed, you'll get an empty list (can change if desired)
-                                        u.canFillAnyRole ||
-                                        (profMap[u.id]?.any { it in neededProfs } == true)
-                                )
-            }
-        }
-
-    private val userProfessionsAllFlow: Flow<Map<String, Set<Profession>>> =
-        usersFlow.flatMapLatest { users ->
-            if (users.isEmpty()) {
-                flowOf(emptyMap())
-            } else {
-                combine(
-                    users.map { u ->
-                        userProfessionsFlow(u.id).map { profs -> u.id to profs }
-                    }
-                ) { pairs -> pairs.toMap() }
-            }
-        }.shareIn(viewModelScope, started = SharingStarted.WhileSubscribed(5_000), replay = 1)
-
 
     fun timeSplitState(activityId: String): Flow<ActivityTimeSplit?> =
         listManager.timeSplitState(activityId)

@@ -104,4 +104,25 @@ class FirebaseDataSource @Inject constructor(
     suspend fun deleteActivityTimeSplit(activityId: String) {
         activityTimeSplit.document(activityId).delete().await()
     }
+
+    suspend fun replaceAssignmentsForActivity(
+        activityId: String,
+        assignmentsList: List<Assignment>
+    ) {
+        // 1) Load existing docs for this activity
+        val existing = assignments
+            .whereEqualTo("activityId", activityId)
+            .get()
+            .await()
+        val batch = fs.batch()
+        for (doc in existing.documents) {
+            batch.delete(doc.reference)
+        }
+        assignmentsList.forEach { assignment ->
+            val docId = assignment.id
+            val docRef = assignments.document(docId)
+            batch.set(docRef, assignment)
+        }
+        batch.commit().await()
+    }
 }

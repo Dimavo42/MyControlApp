@@ -35,6 +35,8 @@ interface ListManager {
     suspend fun addAssignment(assignment: Assignment): Boolean
     suspend fun removeAssignment(assignmentId: String)
 
+    suspend fun replaceAssignmentsForActivity(activityId: String,newAssignments: List<Assignment>)
+
     // Handy counters for UI
     fun assignedCountForActivityFlow(activityId: String): Flow<Int>
 
@@ -58,7 +60,6 @@ interface ListManager {
 
     fun requiredCountsAllFlow(): Flow<List<RequiredCountRow>>
 
-    suspend fun getMaxOrderForActivity(activityId: String): Int?
 
     fun timeSplitState(activityId: String): Flow<ActivityTimeSplit?>
 
