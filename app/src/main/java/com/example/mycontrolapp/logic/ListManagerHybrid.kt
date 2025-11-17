@@ -32,52 +32,49 @@ class ListManagerHybrid @Inject constructor(
 
             withContext(Dispatchers.IO) {
                 db.withTransaction {
-                    // 1) PARENTS FIRST: Users + Activities
-                    snap.users.forEach { user ->
-                        db.userDao().upsert(user)
-                    }
+                    // Build sets first (from remote)
+                    val users = snap.users
+                    val activities = snap.activities
 
-                    snap.activities.forEach { activity ->
-                        db.activityDao().upsert(activity)
-                    }
+                    val validUserIds = users.map { it.id }.toSet()
+                    val validActivityIds = activities.map { it.id }.toSet()
 
-                    // Build sets of valid parent IDs for FK checks
-                    val validUserIds = snap.users.map { it.id }.toSet()
-                    val validActivityIds = snap.activities.map { it.id }.toSet()
-
-                    // 2) CHILD TABLES – always clear first, then insert filtered data
-
-                    // --- Assignments ---
-                    db.assignmentDao().deleteAll()
                     val validAssignments = snap.assignments.filter { asg ->
                         asg.activityId in validActivityIds && asg.userId in validUserIds
                     }
-                    if (validAssignments.isNotEmpty()) {
-                        db.assignmentDao().insertAll(validAssignments)
-                    }
-
-                    // --- Requirements ---
-                    db.activityRoleRequirementDao().deleteAll()
                     val validRequirements = snap.requirements.filter { req ->
                         req.activityId in validActivityIds
+                    }
+                    val validUserProfessions = snap.userProfessions.filter { up ->
+                        up.userId in validUserIds
+                    }
+                    val validTimeSplits = snap.activityTimeSplit.filter { ts ->
+                        ts.activityId in validActivityIds
+                    }
+
+                    // 1) DELETE CHILD TABLES FIRST
+                    db.assignmentDao().deleteAll()
+                    db.activityRoleRequirementDao().deleteAll()
+                    db.userProfessionDao().deleteAll()
+                    db.activityTimeSplitDao().deleteAll()
+
+                    // 2) DELETE PARENT TABLES
+                    db.userDao().deleteAll()
+                    db.activityDao().deleteAll()
+
+                    // 3) INSERT PARENTS
+                    users.forEach { user -> db.userDao().upsert(user) }
+                    activities.forEach { activity -> db.activityDao().upsert(activity) }
+
+                    // 4) INSERT CHILDREN
+                    if (validAssignments.isNotEmpty()) {
+                        db.assignmentDao().insertAll(validAssignments)
                     }
                     if (validRequirements.isNotEmpty()) {
                         db.activityRoleRequirementDao().upsertAll(validRequirements)
                     }
-
-                    // --- User professions ---
-                    db.userProfessionDao().deleteAll()
-                    val validUserProfessions = snap.userProfessions.filter { up ->
-                        up.userId in validUserIds
-                    }
                     if (validUserProfessions.isNotEmpty()) {
                         db.userProfessionDao().insertAll(validUserProfessions)
-                    }
-
-                    // --- Time-split ---
-                    db.activityTimeSplitDao().deleteAll()
-                    val validTimeSplits = snap.activityTimeSplit.filter { ts ->
-                        ts.activityId in validActivityIds
                     }
                     if (validTimeSplits.isNotEmpty()) {
                         db.activityTimeSplitDao().upsertAll(validTimeSplits)

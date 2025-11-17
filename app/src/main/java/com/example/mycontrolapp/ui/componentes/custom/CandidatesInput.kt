@@ -24,14 +24,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 import com.example.mycontrolapp.R
+import com.example.mycontrolapp.core.MAX_CANDIDATES
+import com.example.mycontrolapp.core.MIN_CANDIDATES
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun CandidatesInput(
     value: Int,
     onValueChange: (Int) -> Unit,
-    min: Int = 0,
-    max: Int = 10,
+    min: Int = MIN_CANDIDATES,
+    max: Int = MAX_CANDIDATES,
     modifier: Modifier = Modifier,
     testTagPrefix: String = "candidates",
     initialUseSlider: Boolean = true,

@@ -35,7 +35,8 @@ import com.example.mycontrolapp.R
 import com.example.mycontrolapp.logic.sharedEnums.Team
 import kotlinx.coroutines.launch
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-
+import com.example.mycontrolapp.core.MAX_CANDIDATES
+import com.example.mycontrolapp.core.MIN_CANDIDATES
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,8 +47,6 @@ fun AddActivity(
     prefillEpochDay: Long? = null,
     viewModel: ActivityViewModel = hiltViewModel()
 ) {
-    val minCandidates = 0
-    val maxCandidates = 10
 
     var activityName by remember { mutableStateOf(TextFieldValue("")) }
     var dateText by remember { mutableStateOf(TextFieldValue("")) }
@@ -110,7 +109,7 @@ fun AddActivity(
     val formValid =
         activityName.text.isNotBlank() &&
                 computed.isDateValid && computed.isStartValid && computed.isEndValid &&
-                computed.endAfterStart && candidates > minCandidates && assignCountOk
+                computed.endAfterStart && candidates > MIN_CANDIDATES && assignCountOk
 
     val teamToPersist: Team? =
         if (attachTeamToActivity && selectedTeam != Team.Unknown) selectedTeam else null
@@ -213,9 +212,9 @@ fun AddActivity(
             item {
                 CandidatesInput(
                     value = candidates,
-                    onValueChange = { v -> candidates = v.coerceIn(minCandidates, maxCandidates) },
-                    min = minCandidates,
-                    max = maxCandidates,
+                    onValueChange = { v -> candidates = v.coerceIn(MIN_CANDIDATES, MAX_CANDIDATES) },
+                    min = MIN_CANDIDATES,
+                    max = MAX_CANDIDATES,
                     modifier = Modifier.fillMaxWidth(),
                     testTagPrefix = "candidates"
                 )

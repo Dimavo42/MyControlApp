@@ -1,8 +1,7 @@
 package com.example.mycontrolapp.logic.algorithms
-
 import com.example.mycontrolapp.logic.User
 import com.example.mycontrolapp.logic.sharedData.TimeSegment
-import com.example.mycontrolapp.logic.sharedEnums.Team
+
 
 fun buildTimeSplitAssignments(
     startTime: Long,       // millis

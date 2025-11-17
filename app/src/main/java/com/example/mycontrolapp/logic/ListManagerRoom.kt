@@ -107,8 +107,6 @@ class ListManagerRoom @Inject constructor(
         }
     }
 
-
-
     override fun requiredCountForActivityFlow(activityId: String): Flow<Int> =
         roleRequirementsFlow(activityId) // this already calls your DAO: requirementsForActivityFlow(activityId)
             .map { reqs -> reqs.sumOf { it.requiredCount } }

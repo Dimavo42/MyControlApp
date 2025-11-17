@@ -1,6 +1,7 @@
 package com.example.mycontrolapp.logic.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -45,6 +46,10 @@ interface UserDao {
         ORDER BY u.name COLLATE NOCASE
     """)
     suspend fun getEligibleUsersForTeamAndRole(team: Team, role: Profession?): List<User>
+
+
+    @Query("DELETE FROM users")
+    suspend fun deleteAll()
 
 
 }

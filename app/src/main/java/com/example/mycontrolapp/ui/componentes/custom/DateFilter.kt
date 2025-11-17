@@ -200,7 +200,7 @@ fun DateFilterWithShow(
                 ) { Text(monthLabels[selectedMonth.value - 1]) }
 
                 DropdownMenu(expanded = monthMenu, onDismissRequest = { monthMenu = false }) {
-                    Month.values().forEach { m ->
+                    Month.entries.forEach { m ->
                         DropdownMenuItem(
                             text = { Text(monthLabels[m.value - 1]) },
                             onClick = {

@@ -29,7 +29,6 @@ import com.example.mycontrolapp.ui.componentes.ActivityViewModel
 import com.example.mycontrolapp.ui.componentes.custom.AssignmentRow
 import com.example.mycontrolapp.ui.componentes.custom.ComputedTimeWindow
 import com.example.mycontrolapp.ui.componentes.custom.TimeWindowContainer
-import kotlinx.coroutines.flow.map
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -40,9 +39,13 @@ import com.example.mycontrolapp.logic.algorithms.buildTimeSplitAssignments
 import com.example.mycontrolapp.logic.sharedEnums.Team
 import com.example.mycontrolapp.logic.sharedEnums.UserEditorMode
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.mycontrolapp.core.MAX_CANDIDATES
+import com.example.mycontrolapp.core.MIN_CANDIDATES
+import com.example.mycontrolapp.logic.ActivityRoleRequirement
 import com.example.mycontrolapp.logic.Assignment
 import com.example.mycontrolapp.logic.sharedData.AssignmentDraft
 import com.example.mycontrolapp.logic.sharedData.TimeSplitUiState
+import com.example.mycontrolapp.ui.componentes.custom.CandidatesInput
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -244,6 +247,26 @@ fun AssignmentScreen(
     val zoneId = remember { ZoneId.systemDefault() }
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
 
+
+    var candidates by rememberSaveable(activity.id) { mutableStateOf(0) }
+    var roleSlots by rememberSaveable(activity.id) {
+        mutableStateOf<List<Profession>>(emptyList())
+    }
+
+    LaunchedEffect(requirements) {
+        if (roleSlots.isEmpty() && candidates == 0 && requirements.isNotEmpty()) {
+            val fromDb = buildList {
+                requirements.forEach { req ->
+                    repeat(req.requiredCount) { add(req.profession) }
+                }
+            }
+            roleSlots = fromDb
+            candidates = fromDb.size
+        }
+    }
+
+
+
     // Loading flag + coroutine scope for save
     var isSaving by remember(activity.id) { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
@@ -261,6 +284,7 @@ fun AssignmentScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
+            // --- Title
             item {
                 Text(
                     stringResource(R.string.assignment_title),
@@ -411,6 +435,43 @@ fun AssignmentScreen(
             // Save activity (only in Edit mode)
             if (mode == UserEditorMode.Edit) {
                 item {
+                    CandidatesInput(
+                        value = candidates,
+                        onValueChange = { v ->
+                            val newCount = v.coerceIn(MIN_CANDIDATES, MAX_CANDIDATES)
+                            if (newCount != candidates) {
+                                candidates = newCount
+                                roleSlots = when {
+                                    newCount < roleSlots.size ->
+                                        roleSlots.take(newCount)
+
+                                    newCount > roleSlots.size ->
+                                        roleSlots + List(newCount - roleSlots.size) { Profession.Solider }
+
+                                    else -> roleSlots
+                                }
+                            }
+                        },
+                        min = MIN_CANDIDATES,
+                        max = MAX_CANDIDATES,
+                        modifier = Modifier.fillMaxWidth(),
+                        testTagPrefix = "candidates"
+                    )
+                }
+
+                items(count = candidates, key = { it }) { idx ->
+                    AssignmentRow(
+                        index = idx + 1,
+                        selected = roleSlots.getOrNull(idx) ?: Profession.Solider,
+                        onSelected = { newRole ->
+                            roleSlots = roleSlots.toMutableList().also { list ->
+                                if (idx < list.size) list[idx] = newRole
+                            }
+                        }
+                    )
+                }
+
+                item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -425,6 +486,22 @@ fun AssignmentScreen(
                                     dateEpochDay = computed.dateEpochDay!!,
                                     team = team
                                 )
+                                val rolesToUse = roleSlots.take(candidates)
+                                val newRequirements: List<ActivityRoleRequirement> =
+                                    rolesToUse
+                                        .groupingBy { it }
+                                        .eachCount()
+                                        .map { (profession, count) ->
+                                            ActivityRoleRequirement(
+                                                activityId = activity.id,
+                                                profession = profession,
+                                                requiredCount = count
+                                            )
+                                        }
+
+                                val oldRoleMap = requirements.associate { it.profession to it.requiredCount }
+                                val newRoleMap = newRequirements.associate { it.profession to it.requiredCount }
+                                val rolesChanged = oldRoleMap != newRoleMap
 
                                 val hasActivityChanged =
                                     updated.startAt != activity.startAt ||
@@ -432,7 +509,7 @@ fun AssignmentScreen(
                                             updated.dateEpochDay != activity.dateEpochDay ||
                                             updated.team != activity.team
 
-                                if (hasActivityChanged && assignmentsForActivity.isNotEmpty()) {
+                                if ((hasActivityChanged || rolesChanged) && assignmentsForActivity.isNotEmpty()) {
                                     assignmentsForActivity.forEach { asg ->
                                         viewModel.unassignUser(asg.activityId, asg.userId)
                                     }
@@ -443,8 +520,23 @@ fun AssignmentScreen(
                                         segments = emptyList()
                                     )
                                 }
+                                coroutineScope.launch {
+                                    isSaving = true
+                                    try {
+                                        if (rolesChanged) {
+                                            viewModel.insertActivityWithRequirements(
+                                                activity = updated,
+                                                roles = rolesToUse
+                                            )
+                                        }
+                                        else{
+                                            viewModel.updateActivity(updated)
+                                        }
+                                    } finally {
+                                        isSaving = false
+                                    }
+                                }
 
-                                viewModel.updateActivity(updated)
                                 mode = UserEditorMode.Fill
                             },
                             modifier = Modifier
