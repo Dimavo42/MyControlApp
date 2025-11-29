@@ -11,7 +11,6 @@ WORKDIR /src/app
 # Copy the entire project (simple; you can optimize later with .dockerignore)
 COPY . .
 
-# --- Install minimal Android SDK (no emulator needed for compile) ---
 
 RUN apt-get update && apt-get install -y wget unzip && rm -rf /var/lib/apt/lists/*
 
@@ -105,7 +104,7 @@ RUN apt-get update && apt-get install -y \
 
 # ---- Build-time args ----
 ARG ARCH="x86_64"
-ARG TARGET="google_apis_playstore"
+ARG TARGET="google_apis"
 ARG API_LEVEL="34"
 ARG BUILD_TOOLS="34.0.0"
 ARG ANDROID_API_LEVEL="android-${API_LEVEL}"

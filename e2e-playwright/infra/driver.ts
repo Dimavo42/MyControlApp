@@ -1,18 +1,21 @@
 import { remote } from 'webdriverio';
 
 
+export const mobileDriver = async (): Promise<WebdriverIO.Browser> => {
+  const client = await remote({
+    hostname: '127.0.0.1',
+    port: 4723,
+    path: '/wd/hub',
+    logLevel: 'info',
+    capabilities: {
+      platformName: 'Android',
+      'appium:automationName': 'UiAutomator2',
+      'appium:deviceName': 'emulator-5554',
+      'appium:app': '/workspace/app-debug.apk',
+      'appium:newCommandTimeout': 300,
+      'appium:autoGrantPermissions': true,
+    },
+  });
 
-
-export const mobileDriver = async () => {
-    const myRemote:WebdriverIO.Browser = await remote({
-        capabilities: {
-            platformName: 'Android',
-            'appium:deviceName': 'emulator-5554',
-            'appium:platformVersion': '14',
-            'appium:app': '/path/to/app.apk',
-            'appium:automationName': 'UiAutomator2',
-        },
-    });
-
-    return myRemote;
+  return client;
 };

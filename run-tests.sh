@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
+
+#Run it as bash
+
+# That line is “Bash strict mode”. It makes your script much less forgiving and helps catch bugs
+# e -> exit on error
+# u -> error on undefined variable
+# o -> the exit code of the pipeline becomes non-zero if any element fails
+
 set -euo pipefail
 
 APK_PATH="/workspace/app-debug.apk"
@@ -22,7 +30,7 @@ EMULATOR_PID=$!
 
 echo "Waiting for emulator to be online..."
 # instead of a blind 'adb wait-for-device', poll with a timeout
-MAX_WAIT_SEC=180
+MAX_WAIT_SEC=600
 START_TIME=$(date +%s)
 
 while true; do
@@ -53,7 +61,7 @@ done
 # Wait for boot_completed property
 BOOT_COMPLETED=""
 echo "Waiting for sys.boot_completed=1..."
-MAX_BOOT_WAIT_SEC=180
+MAX_BOOT_WAIT_SEC=600
 START_TIME=$(date +%s)
 
 until [[ "${BOOT_COMPLETED}" == "1" ]]; do
