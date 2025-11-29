@@ -24,6 +24,7 @@ emulator -avd "${EMULATOR_NAME}" \
   -no-boot-anim \
   -no-audio \
   -accel off \
+  -memory 2048 \
   > /tmp/emulator.log 2>&1 &
 
 EMULATOR_PID=$!
@@ -61,7 +62,7 @@ done
 # Wait for boot_completed property
 BOOT_COMPLETED=""
 echo "Waiting for sys.boot_completed=1..."
-MAX_BOOT_WAIT_SEC=600
+MAX_BOOT_WAIT_SEC=1000
 START_TIME=$(date +%s)
 
 until [[ "${BOOT_COMPLETED}" == "1" ]]; do
@@ -87,6 +88,15 @@ echo "Emulator booted."
 echo "=== Installing APK ==="
 adb install -r "${APK_PATH}"
 
+
+echo "=== Starting Appium server ==="
+cd /workspace/tests
+
+npx appium --address 0.0.0.0 --port 4723 --log /tmp/appium.log > /tmp/appium-stdout.log 2>&1 &
+
+APPIUM_PID=$!
+echo "Appium PID: ${APPIUM_PID}"
+
 echo "=== Running Playwright tests ==="
 cd "${TESTS_DIR}"
 
@@ -106,8 +116,11 @@ fi
 
 TEST_EXIT=${TEST_EXIT:-0}
 
-echo "=== Stopping emulator ==="
+echo "=== Stopping emulator & Appium ==="
 kill "${EMULATOR_PID}" || true
+kill "${APPIUM_PID}" || true
+
+
 
 echo "=== Done ==="
 echo "Test reports are in: ${RESULTS_DIR}"
