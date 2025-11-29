@@ -21,21 +21,59 @@ emulator -avd "${EMULATOR_NAME}" \
 EMULATOR_PID=$!
 
 echo "Waiting for emulator to be online..."
-adb wait-for-device
+# instead of a blind 'adb wait-for-device', poll with a timeout
+MAX_WAIT_SEC=180
+START_TIME=$(date +%s)
+
+while true; do
+  # Don't let 'adb get-state' kill the script on non-zero exit
+  STATE=$(adb get-state 2>/dev/null || echo "offline")
+
+  echo "adb state: ${STATE}"
+
+  if [[ "${STATE}" == "device" ]]; then
+    echo "Emulator is online."
+    break
+  fi
+
+  NOW=$(date +%s)
+  ELAPSED=$((NOW - START_TIME))
+  if (( ELAPSED > MAX_WAIT_SEC )); then
+    echo "ERROR: Emulator did not come online within ${MAX_WAIT_SEC}s"
+    echo "===== emulator log ====="
+    cat /tmp/emulator.log || true
+    echo "========================"
+    kill "${EMULATOR_PID}" || true
+    exit 1
+  fi
+
+  sleep 3
+done
 
 # Wait for boot_completed property
 BOOT_COMPLETED=""
 echo "Waiting for sys.boot_completed=1..."
+MAX_BOOT_WAIT_SEC=180
+START_TIME=$(date +%s)
+
 until [[ "${BOOT_COMPLETED}" == "1" ]]; do
-  BOOT_COMPLETED=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+  BOOT_COMPLETED=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || echo "")
   echo "boot_completed=${BOOT_COMPLETED}"
-  sleep 2
+
+  NOW=$(date +%s)
+  ELAPSED=$((NOW - START_TIME))
+  if (( ELAPSED > MAX_BOOT_WAIT_SEC )); then
+    echo "ERROR: sys.boot_completed never became 1 within ${MAX_BOOT_WAIT_SEC}s"
+    echo "===== emulator log ====="
+    cat /tmp/emulator.log || true
+    echo "========================"
+    kill "${EMULATOR_PID}" || true
+    exit 1
+  fi
+
+  sleep 3
 done
 echo "Emulator booted."
-
-
-# Unlock screen just in case
-adb shell input keyevent 82 || true
 
 
 echo "=== Installing APK ==="

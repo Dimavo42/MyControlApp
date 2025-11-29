@@ -1,27 +1,61 @@
-
+########################
 # Stage 1: Build Android app (APK)
 ########################
-FROM gradle:8.7-jdk21 AS android-build
+FROM gradle:8.13-jdk21 AS android-build
 
+
+# Your project root inside the container.
+# With this, your module is at /src/app/app/...
 WORKDIR /src/app
 
-# 1) Copy Gradle wrapper + root gradle files
-COPY gradlew gradlew.bat settings.gradle.kts app/build.gradle.kts gradle/ ./
-# if structure is different, adjust paths accordingly
+# Copy the entire project (simple; you can optimize later with .dockerignore)
+COPY . .
 
-# now copy the whole Android project
-COPY app/ ./
+# --- Install minimal Android SDK (no emulator needed for compile) ---
 
+RUN apt-get update && apt-get install -y wget unzip && rm -rf /var/lib/apt/lists/*
 
-RUN chmod +x gradlew
+# SDK location inside the container
+ENV ANDROID_SDK_ROOT=/opt/android-sdk
+ENV ANDROID_HOME=/opt/android-sdk
 
-# build debug APK
+# Versions – adjust if your project uses different ones
+ARG ANDROID_CMD="commandlinetools-linux-11076708_latest.zip"
+ARG API_LEVEL=34
+ARG BUILD_TOOLS=34.0.0
+ARG ANDROID_API_LEVEL="android-${API_LEVEL}"
+
+# Download commandline tools
+RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
+    wget -q https://dl.google.com/android/repository/${ANDROID_CMD} -P /tmp && \
+    unzip -q /tmp/${ANDROID_CMD} -d ${ANDROID_SDK_ROOT}/cmdline-tools && \
+    mv ${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools ${ANDROID_SDK_ROOT}/cmdline-tools/latest && \
+    rm /tmp/${ANDROID_CMD}
+
+# Put SDK tools on PATH
+ENV PATH="${PATH}:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROOT}/platform-tools"
+
+# Accept licenses
+RUN yes | sdkmanager --sdk_root=${ANDROID_SDK_ROOT} --licenses
+
+# Install only what build needs: platform + build-tools + platform-tools
+RUN yes | sdkmanager --sdk_root=${ANDROID_SDK_ROOT} \
+    "platforms;${ANDROID_API_LEVEL}" \
+    "build-tools;${BUILD_TOOLS}" \
+    "platform-tools"
+
+# --- local.properties from Windows breaks in Linux, override it ---
+
+# Remove existing local.properties (with Windows path) if present
+RUN rm -f local.properties app/local.properties || true \
+ && printf "sdk.dir=%s\n" "/opt/android-sdk" > local.properties
+
+# --- Build debug APK ---
+
 RUN gradle :app:assembleDebug --no-daemon
 
-# After this, APK should be at:
+# APK will be here:
 # /src/app/app/build/outputs/apk/debug/app-debug.apk
-
-
 ########################
 
 ########################
@@ -38,8 +72,6 @@ RUN npm install
 
 # now copy the rest of the tests
 COPY e2e-playwright/ ./
-
-RUN npm run build
 
 
 ########################
@@ -58,7 +90,7 @@ COPY --from=android-build \
     /src/app/app/build/outputs/apk/debug/app-debug.apk \
     ./app-debug.apk
 
-# 2) Copy tests from tests-build stage
+# 2) Copy tests from tests-build stage as well all the dependcies
 COPY --from=tests-build \
     /src/tests \
     ./tests
@@ -69,7 +101,7 @@ RUN apt-get update && apt-get install -y \
     libdrm-dev libxkbcommon-dev libgbm-dev libasound-dev libnss3 libxcursor1 \
     libpulse-dev libxshmfence-dev xauth xvfb x11vnc fluxbox wmctrl libdbus-glib-1-2 \
  && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
- && apt-get install -y nodejs \
+ && apt-get install -y nodejs
 
 # ---- Build-time args ----
 ARG ARCH="x86_64"
