@@ -23,8 +23,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.myapp.appNavigation.AppDestinations
-import com.example.mycontrolapp.appNavigation.BottomNavBar
-import com.example.mycontrolapp.appNavigation.BottomNavItem
+import com.example.mycontrolapp.navigation.BottomNavBar
+import com.example.mycontrolapp.navigation.BottomNavItem
 import com.example.mycontrolapp.ui.componentes.screens.AddActivity
 import com.example.mycontrolapp.ui.componentes.screens.AddUser
 import com.example.mycontrolapp.ui.componentes.screens.AssignmentScreen

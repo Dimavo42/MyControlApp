@@ -1,0 +1,117 @@
+
+# Stage 1: Build Android app (APK)
+########################
+FROM gradle:8.7-jdk21 AS android-build
+
+WORKDIR /src/app
+
+# copy only gradle files first to improve cache
+COPY app/gradle* app/settings.gradle app/build.gradle.kts* app/gradle/ ./
+# if structure is different, adjust paths accordingly
+
+# now copy the whole Android project
+COPY app/ ./
+
+# build debug APK
+RUN ./gradlew assembleDebug --no-daemon
+
+# After this, APK should be at:
+# /src/app/app/build/outputs/apk/debug/app-debug.apk
+
+
+########################
+
+########################
+# Stage 2: Build Playwright tests
+########################
+FROM mcr.microsoft.com/playwright:v1.50.0-jammy AS tests-build
+# (adjust Playwright image tag to match your version)
+
+WORKDIR /src/tests
+
+# copy dependencies first for caching
+COPY e2e-playwright/package*.json ./
+RUN npm install
+
+# now copy the rest of the tests
+COPY e2e-playwright/ ./
+
+RUN npm run build
+
+
+########################
+
+
+
+########################
+# Stage 3: Create an emulator and run the tests
+########################
+FROM eclipse-temurin:21-jdk-jammy AS runner
+
+WORKDIR /workspace
+
+# 1) Copy APK from android-build stage
+COPY --from=android-build \
+    /src/app/app/build/outputs/apk/debug/app-debug.apk \
+    ./app-debug.apk
+
+# 2) Copy tests from tests-build stage
+COPY --from=tests-build \
+    /src/tests \
+    ./tests
+# -------- Install base tools + Node + emulator deps --------
+RUN apt-get update && apt-get install -y \
+    curl wget unzip bzip2 \
+    ca-certificates gnupg \
+    libdrm-dev libxkbcommon-dev libgbm-dev libasound-dev libnss3 libxcursor1 \
+    libpulse-dev libxshmfence-dev xauth xvfb x11vnc fluxbox wmctrl libdbus-glib-1-2 \
+ && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+ && apt-get install -y nodejs \
+
+# ---- Build-time args ----
+ARG ARCH="x86_64"
+ARG TARGET="google_apis_playstore"
+ARG API_LEVEL="34"
+ARG BUILD_TOOLS="34.0.0"
+ARG ANDROID_API_LEVEL="android-${API_LEVEL}"
+ARG ANDROID_APIS="${TARGET};${ARCH}"
+ARG EMULATOR_PACKAGE="system-images;${ANDROID_API_LEVEL};${ANDROID_APIS}"
+ARG PLATFORM_VERSION="platforms;${ANDROID_API_LEVEL}"
+ARG BUILD_TOOL="build-tools;${BUILD_TOOLS}"
+ARG ANDROID_CMD="commandlinetools-linux-11076708_latest.zip"
+ARG ANDROID_SDK_PACKAGES="${EMULATOR_PACKAGE} ${PLATFORM_VERSION} ${BUILD_TOOL} platform-tools emulator"
+
+
+# ---- SDK root ----
+ENV ANDROID_SDK_ROOT=/opt/android
+
+# ---- Install command-line tools ----
+RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
+    wget https://dl.google.com/android/repository/${ANDROID_CMD} -P /tmp && \
+    unzip /tmp/${ANDROID_CMD} -d ${ANDROID_SDK_ROOT}/cmdline-tools && \
+    mv ${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools ${ANDROID_SDK_ROOT}/cmdline-tools/latest && \
+    rm /tmp/${ANDROID_CMD}
+
+# Add tools to PATH
+ENV PATH="${PATH}:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROOT}/platform-tools:${ANDROID_SDK_ROOT}/emulator:${ANDROID_SDK_ROOT}/build-tools/${BUILD_TOOLS}"
+ENV DOCKER="true"
+
+# ---- Accept licenses ----
+RUN yes | sdkmanager --sdk_root=${ANDROID_SDK_ROOT} --licenses
+
+# ---- Install SDK packages (platform, build-tools, emulator, system image, etc.) ----
+RUN yes | sdkmanager --sdk_root=${ANDROID_SDK_ROOT} --verbose --no_https ${ANDROID_SDK_PACKAGES}
+
+# ---- Create AVD ----
+ARG EMULATOR_NAME="nexus"
+ENV  EMULATOR_DEVICE="Nexus 6"
+
+RUN echo "no" | avdmanager --verbose create avd \
+    --name "${EMULATOR_NAME}" \
+    --device "${EMULATOR_DEVICE}" \
+    --package "${EMULATOR_PACKAGE}" \
+    --force
+
+
+
+

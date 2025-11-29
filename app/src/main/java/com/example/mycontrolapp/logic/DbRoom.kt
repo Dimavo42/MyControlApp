@@ -27,7 +27,7 @@ data class User(
     }
 }
 
-// Cross-ref
+
 @IgnoreExtraProperties
 @Entity(
     tableName = "user_professions",

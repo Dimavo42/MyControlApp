@@ -185,7 +185,6 @@ class ListManagerHybrid @Inject constructor(
         }
     }
 
-
     override suspend fun clearTimeSplitState(activityId: String) {
         room.db.activityTimeSplitDao().deleteByActivityId(activityId)
         if (remoteEnabled) runCatching { remoteLazy.get().deleteActivityTimeSplit(activityId) }
