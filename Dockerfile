@@ -5,15 +5,18 @@ FROM gradle:8.7-jdk21 AS android-build
 
 WORKDIR /src/app
 
-# copy only gradle files first to improve cache
-COPY app/gradle* app/settings.gradle app/build.gradle.kts* app/gradle/ ./
+# 1) Copy Gradle wrapper + root gradle files
+COPY gradlew gradlew.bat settings.gradle.kts app/build.gradle.kts gradle/ ./
 # if structure is different, adjust paths accordingly
 
 # now copy the whole Android project
 COPY app/ ./
 
+
+RUN chmod +x gradlew
+
 # build debug APK
-RUN ./gradlew assembleDebug --no-daemon
+RUN gradle :app:assembleDebug --no-daemon
 
 # After this, APK should be at:
 # /src/app/app/build/outputs/apk/debug/app-debug.apk
@@ -111,6 +114,17 @@ RUN echo "no" | avdmanager --verbose create avd \
     --device "${EMULATOR_DEVICE}" \
     --package "${EMULATOR_PACKAGE}" \
     --force
+
+
+# -------- Test reports directory --------
+ENV TEST_RESULTS_DIR=/workspace/test-results
+RUN mkdir -p ${TEST_RESULTS_DIR}
+
+# -------- Copy entrypoint script --------
+COPY run-tests.sh /workspace/run-tests.sh
+RUN chmod +x /workspace/run-tests.sh
+
+ENTRYPOINT ["/workspace/run-tests.sh"]
 
 
 
