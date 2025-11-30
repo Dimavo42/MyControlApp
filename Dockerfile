@@ -92,14 +92,42 @@ COPY --from=android-build \
 COPY --from=tests-build \
     /src/tests \
     ./tests
-# -------- Install base tools + Node + emulator deps --------
+# -------- Install base tools + Node + emulator deps + SMPT client  --------
+#disable interactive install
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update && apt-get install -y \
     curl wget unzip bzip2 \
     ca-certificates gnupg \
     libdrm-dev libxkbcommon-dev libgbm-dev libasound-dev libnss3 libxcursor1 \
     libpulse-dev libxshmfence-dev xauth xvfb x11vnc fluxbox wmctrl libdbus-glib-1-2 \
  && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
- && apt-get install -y nodejs
+ && apt-get install -y nodejs msmtp \
+ && rm -rf /var/lib/apt/lists/*
+
+
+
+
+# -------- Configure msmtp (SMTP client) --------
+# Password will come from SMTP_PASS env at runtime (from .secrets)
+RUN printf '%s\n' \
+  'defaults' \
+  'auth           on' \
+  'tls            on' \
+  'tls_trust_file /etc/ssl/certs/ca-certificates.crt' \
+  'logfile        /tmp/msmtp.log' \
+  '' \
+  'account gmail' \
+  'host           smtp.gmail.com' \
+  'port           587' \
+  'from           dimaiscool95@gmail.com' \
+  'user           dimaiscool95@gmail.com' \
+  'passwordeval   "printenv SMTP_PASS"' \
+  '' \
+  'account default : gmail' \
+  > /etc/msmtprc \
+  && chmod 600 /etc/msmtprc
+
 
 # ---- Build-time args ----
 ARG ARCH="x86_64"
