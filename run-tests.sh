@@ -100,21 +100,15 @@ APPIUM_PID=$!
 echo "Appium PID: ${APPIUM_PID}"
 
 echo "=== Running Playwright tests ==="
-cd "${TESTS_DIR}"
-
-
-# Ensure local node_modules binaries are used
-export PATH="./node_modules/.bin:${PATH}"
 # Don't try to open HTML report automatically
 export PWTEST_HTML_REPORT_OPEN="never"
 
-# Prefer npm script if you defined one, otherwise plain playwright
-if npm run | grep -q "playwright"; then
-  # Example: "test:ci" script that runs Playwright
-  npm run test:ci -- --reporter=line,html --output="${RESULTS_DIR}" || TEST_EXIT=$?
-else
-  npx playwright test --reporter=line,html --output="${RESULTS_DIR}" || TEST_EXIT=$?
-fi
+cd "${TESTS_DIR}"
+
+TEST_EXIT=0
+
+npx playwright test --reporter=line,html --output="${RESULTS_DIR}" || TEST_EXIT=$?
+
 
 TEST_EXIT=${TEST_EXIT:-0}
 
