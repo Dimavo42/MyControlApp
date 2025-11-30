@@ -32,6 +32,7 @@ EMULATOR_PID=$!
 echo "Waiting for emulator to be online..."
 # instead of a blind 'adb wait-for-device', poll with a timeout
 MAX_WAIT_SEC=600
+# Take the Date now and assign it to variable
 START_TIME=$(date +%s)
 
 while true; do
@@ -66,7 +67,8 @@ MAX_BOOT_WAIT_SEC=1000
 START_TIME=$(date +%s)
 
 until [[ "${BOOT_COMPLETED}" == "1" ]]; do
-  BOOT_COMPLETED=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || echo "")
+  #take the status code of the boot and throw errors away strips \r from 1
+  BOOT_COMPLETED=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
   echo "boot_completed=${BOOT_COMPLETED}"
 
   NOW=$(date +%s)
