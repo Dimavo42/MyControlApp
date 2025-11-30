@@ -11,8 +11,8 @@ set -euo pipefail
 
 APK_PATH="/workspace/app-debug.apk"
 TESTS_DIR="/workspace/tests"
-RESULTS_DIR="${TEST_RESULTS_DIR:-/workspace/test-results}"
-EMULATOR_NAME="${EMULATOR_NAME:-nexus}"
+APK_PATH="/workspace/app-debug.apk"
+EMULATOR_NAME="nexus"
 
 
 

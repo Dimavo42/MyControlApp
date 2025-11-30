@@ -60,8 +60,7 @@ RUN gradle :app:assembleDebug --no-daemon
 ########################
 # Stage 2: Build Playwright tests
 ########################
-FROM mcr.microsoft.com/playwright:v1.50.0-jammy AS tests-build
-# (adjust Playwright image tag to match your version)
+FROM mcr.microsoft.com/playwright:v1.56.1-jammy AS tests-build
 
 WORKDIR /src/tests
 
@@ -150,6 +149,10 @@ RUN echo "no" | avdmanager --verbose create avd \
 # -------- Test reports directory --------
 ENV TEST_RESULTS_DIR=/workspace/test-results
 RUN mkdir -p ${TEST_RESULTS_DIR}
+
+# -------- Copy email script --------
+COPY report-email.sh /workspace/report-email.sh
+RUN chmod +x /workspace/report-email.sh
 
 # -------- Copy entrypoint script --------
 COPY run-tests.sh /workspace/run-tests.sh
