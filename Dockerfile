@@ -4,11 +4,9 @@
 FROM gradle:8.13-jdk21 AS android-build
 
 
-# Your project root inside the container.
-# With this, your module is at /src/app/app/...
 WORKDIR /src/app
 
-# Copy the entire project (simple; you can optimize later with .dockerignore)
+# Copy the entire project  (.dockerignore can edit it)
 COPY . .
 
 
@@ -77,7 +75,7 @@ COPY e2e-playwright/ ./
 
 
 ########################
-# Stage 3: Create an emulator and run the tests
+# Stage 3: Create an emulator run the tests and send the report by HTML
 ########################
 FROM eclipse-temurin:21-jdk-jammy AS runner
 
