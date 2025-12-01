@@ -2,18 +2,12 @@
 
 #Run it as bash
 
-# That line is “Bash strict mode”. It makes your script much less forgiving and helps catch bugs
+# That line is “Bash strict mode”
 # e -> exit on error
 # u -> error on undefined variable
 # o -> the exit code of the pipeline becomes non-zero if any element fails
 
 set -euo pipefail
-
-APK_PATH="/workspace/app-debug.apk"
-TESTS_DIR="/workspace/tests"
-APK_PATH="/workspace/app-debug.apk"
-EMULATOR_NAME="nexus"
-
 
 
 echo "=== Starting Android emulator ==="
@@ -107,7 +101,7 @@ cd "${TESTS_DIR}"
 
 TEST_EXIT=0
 
-npx playwright test --reporter=line,html --output="${RESULTS_DIR}" || TEST_EXIT=$?
+npx playwright test --reporter=line,html --output="${TEST_RESULTS_DIR}" || TEST_EXIT=$?
 
 
 TEST_EXIT=${TEST_EXIT:-0}
@@ -116,9 +110,14 @@ echo "=== Stopping emulator & Appium ==="
 kill "${EMULATOR_PID}" || true
 kill "${APPIUM_PID}" || true
 
+echo "=== Sending report by email ==="
+
+if ! /workspace/report-email.sh "${TEST_RESULTS_DIR}"; then
+  echo "Failed to send the email"
+fi
 
 
 echo "=== Done ==="
-echo "Test reports are in: ${RESULTS_DIR}"
+echo "Test reports are in: ${TEST_RESULTS_DIR}"
 
 exit "${TEST_EXIT}"

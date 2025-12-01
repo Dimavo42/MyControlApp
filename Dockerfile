@@ -128,6 +128,8 @@ RUN printf '%s\n' \
   > /etc/msmtprc \
   && chmod 600 /etc/msmtprc
 
+ENV FROM_USER="dimaiscool95@gmail.com"
+ENV CI_MAIL="dimavoronov95work@gmail.com"
 
 # ---- Build-time args ----
 ARG ARCH="x86_64"
@@ -143,8 +145,9 @@ ARG BUILD_TOOL="build-tools;${BUILD_TOOLS}"
 ARG ANDROID_SDK_PACKAGES="${EMULATOR_PACKAGE} ${PLATFORM_VERSION} ${BUILD_TOOL} platform-tools emulator"
 
 
-# ---- SDK root ----
+# ---- SDK root + APK PATH ----
 ENV ANDROID_SDK_ROOT=/opt/android
+ENV APK_PATH=/workspace/app-debug.apk
 
 # ---- Install command-line tools ----
 RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
@@ -164,7 +167,7 @@ RUN yes | sdkmanager --sdk_root=${ANDROID_SDK_ROOT} --licenses
 RUN yes | sdkmanager --sdk_root=${ANDROID_SDK_ROOT} --verbose --no_https ${ANDROID_SDK_PACKAGES}
 
 # ---- Create AVD ----
-ARG EMULATOR_NAME="nexus"
+ENV EMULATOR_NAME="nexus"
 ENV  EMULATOR_DEVICE="Nexus 6"
 
 RUN echo "no" | avdmanager --verbose create avd \
@@ -176,6 +179,7 @@ RUN echo "no" | avdmanager --verbose create avd \
 
 # -------- Test reports directory --------
 ENV TEST_RESULTS_DIR=/workspace/test-results
+ENV TESTS_DIR=/workspace/tests
 RUN mkdir -p ${TEST_RESULTS_DIR}
 
 # -------- Copy email script --------
