@@ -20,7 +20,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          tags: mycontrolapp-ci:latest
+          tags: android-emulator
           push: false
           load: true
       - name: Run tests inside container
@@ -30,7 +30,7 @@ jobs:
           docker run \
             --rm \
             -e SMTP_PASS=${{ secrets.SMTP_PASS }} \
-            mycontrolapp-ci:latest
+            android-emulator
             
 
 

@@ -10,6 +10,37 @@
 set -euo pipefail
 
 
+EMULATOR_PID=""
+APPIUM_PID=""
+TEST_EXIT=0
+
+
+cleanup() {
+  local status=$?   # exit code of the script at the moment of exit
+
+  echo "=== Stopping emulator & Appium (cleanup) ==="
+  if [[ -n "${EMULATOR_PID:-}" ]]; then
+    kill "${EMULATOR_PID}" 2>/dev/null || true
+  fi
+  if [[ -n "${APPIUM_PID:-}" ]]; then
+    kill "${APPIUM_PID}" 2>/dev/null || true
+  fi
+
+  echo "=== Sending report by email (cleanup) ==="
+  if ! /workspace/report-email.sh "${TEST_RESULTS_DIR}"; then
+    echo "Failed to send the email"
+  fi
+
+  if (( TEST_EXIT != 0 )); then
+    exit "$TEST_EXIT"
+  else
+    exit "$status"
+  fi
+}
+#clean up script that will run on exit
+trap 'cleanup' EXIT
+
+
 echo "=== Starting Android emulator ==="
 emulator -avd "${EMULATOR_NAME}" \
   -no-window \
@@ -123,24 +154,7 @@ echo "=== Running Playwright tests ==="
 
 cd "${TESTS_DIR}"
 
-TEST_EXIT=0
-
 npx playwright test --output="${TEST_RESULTS_DIR}" || TEST_EXIT=$?
 
 
-echo "=== Stopping emulator & Appium ==="
-kill "${EMULATOR_PID}" || true
-kill "${APPIUM_PID}" || true
-
-echo "=== Sending report by email ==="
-
-if ! /workspace/report-email.sh "${TEST_RESULTS_DIR}"; then
-  echo "Failed to send the email"
-fi
-
-
-echo "=== Done ==="
-echo "Test reports are in: ${TEST_RESULTS_DIR}"
-
-
-exit "$TEST_EXIT"
+echo "=== Script main body finished successful, cleanup will now run ==="
