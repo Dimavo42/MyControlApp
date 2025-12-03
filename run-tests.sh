@@ -81,6 +81,10 @@ done
 echo "Emulator booted."
 
 
+echo "Waiting extra 20s for system to stabilize..."
+sleep 20
+
+
 echo "Waiting for launcher..."
 while ! adb shell "pm list packages" >/dev/null 2>&1; do
   echo "Package manager not ready yet..."
@@ -89,7 +93,15 @@ done
 
 
 echo "=== Installing APK ==="
-adb install -r "${APK_PATH}"
+for i in 1 2 3; do
+  echo "=== Installing APK (attempt $i) ==="
+  if adb install -r "$APK_PATH"; then
+    echo "APK installed successfully."
+    break
+  fi
+  echo "Install failed, sleeping before retry..."
+  sleep 10
+done
 
 
 echo "=== Starting Appium server ==="
