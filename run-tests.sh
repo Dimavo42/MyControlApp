@@ -127,7 +127,6 @@ TEST_EXIT=0
 
 npx playwright test --output="${TEST_RESULTS_DIR}" || TEST_EXIT=$?
 
-exit "$TEST_EXIT"
 
 echo "=== Stopping emulator & Appium ==="
 kill "${EMULATOR_PID}" || true
@@ -142,3 +141,6 @@ fi
 
 echo "=== Done ==="
 echo "Test reports are in: ${TEST_RESULTS_DIR}"
+
+
+exit "$TEST_EXIT"
