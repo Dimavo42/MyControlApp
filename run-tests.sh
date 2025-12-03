@@ -81,30 +81,41 @@ done
 echo "Emulator booted."
 
 
+echo "Waiting for launcher..."
+while ! adb shell "pm list packages" >/dev/null 2>&1; do
+  echo "Package manager not ready yet..."
+  sleep 2
+done
+
+
 echo "=== Installing APK ==="
 adb install -r "${APK_PATH}"
 
 
 echo "=== Starting Appium server ==="
-cd /workspace/tests
+APPIUM_LOG=/tmp/appium.log
 
-npx appium --address 0.0.0.0 --port 4723 --log /tmp/appium.log > /tmp/appium-stdout.log 2>&1 &
-
+npx appium \
+  --address 0.0.0.0 \
+  --port 4723 \
+  --log "$APPIUM_LOG" \
+  --log-level debug \
+  --log-timestamp \
+  >> "$APPIUM_LOG" 2>&1 &
 APPIUM_PID=$!
+
 echo "Appium PID: ${APPIUM_PID}"
 
 echo "=== Running Playwright tests ==="
-# Don't try to open HTML report automatically
-export PWTEST_HTML_REPORT_OPEN="never"
+
 
 cd "${TESTS_DIR}"
 
 TEST_EXIT=0
 
-npx playwright test --reporter=line,html --output="${TEST_RESULTS_DIR}" || TEST_EXIT=$?
+npx playwright test --output="${TEST_RESULTS_DIR}" || TEST_EXIT=$?
 
-
-TEST_EXIT=${TEST_EXIT:-0}
+exit "$TEST_EXIT"
 
 echo "=== Stopping emulator & Appium ==="
 kill "${EMULATOR_PID}" || true
@@ -119,5 +130,3 @@ fi
 
 echo "=== Done ==="
 echo "Test reports are in: ${TEST_RESULTS_DIR}"
-
-exit "${TEST_EXIT}"

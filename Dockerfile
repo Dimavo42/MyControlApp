@@ -176,9 +176,8 @@ RUN echo "no" | avdmanager --verbose create avd \
 
 
 # -------- Test reports directory --------
-ENV TEST_RESULTS_DIR=/workspace/test-results
+ENV TEST_RESULTS_DIR=/workspace/tests/playwright-report
 ENV TESTS_DIR=/workspace/tests
-RUN mkdir -p ${TEST_RESULTS_DIR}
 
 # -------- Copy email script --------
 COPY report-email.sh /workspace/report-email.sh
