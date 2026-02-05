@@ -21,7 +21,7 @@ import javax.inject.Singleton
 object AppModule {
 
     @Provides @RemoteEnabled @Singleton
-    fun provideRemoteEnabled(): Boolean = !DeviceInfo.isEmulator()
+    fun provideRemoteEnabled(): Boolean = false
 
     @Provides @Singleton
     fun provideDb(@ApplicationContext ctx: Context): AppDb =

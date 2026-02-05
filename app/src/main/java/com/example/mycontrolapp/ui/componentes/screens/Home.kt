@@ -37,6 +37,7 @@ fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = modifier
             .fillMaxSize()
+            .navigationBarsPadding()
     ) {
         item{
             DateFilterWithShow(
@@ -56,6 +57,19 @@ fun HomeScreen(
                     viewModel = viewModel                             // pass same VM
                 )
             }
+        }
+        item {
+            SimpleWebView(
+                url = "https://www.mizrahi-tefahot.co.il/",
+                title = "WebView- Mizrahi Tefahot",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(420.dp)
+                    .padding(horizontal = 16.dp)
+            )
+        }
+        item {
+            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }
